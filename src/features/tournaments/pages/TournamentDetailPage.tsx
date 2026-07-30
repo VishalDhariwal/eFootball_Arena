@@ -28,7 +28,6 @@ const TournamentLeaderboard = ({
   tournamentId: string;
   registrations: any[] | undefined;
 }) => {
-}) => {
   const { data: stats, isLoading } = useTournamentLeaderboard(tournamentId);
   const { data: avatars } = useAvatars();
 
