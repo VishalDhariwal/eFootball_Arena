@@ -1,0 +1,164 @@
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { ArrowLeft, Trophy, Calendar, Users, Award } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useCreateTournament } from "@/features/tournaments/hooks/useTournaments";
+
+const tournamentSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  description: z.string().optional(),
+  format: z.string().min(1, "Format is required"),
+
+  max_players: z.coerce.number().min(2, "Must have at least 2 players").optional(),
+  start_date: z.string().optional(),
+});
+
+type TournamentFormValues = z.infer<typeof tournamentSchema>;
+
+export const CreateTournamentPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const createTournament = useCreateTournament();
+
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<TournamentFormValues>({
+    resolver: zodResolver(tournamentSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      format: "single_elimination",
+
+    },
+  });
+
+  const onSubmit = (data: TournamentFormValues) => {
+    if (!user) return;
+
+    createTournament.mutate({
+      ...data,
+      entry_fee: 0, // Always free
+      organizer_id: user.id,
+      status: 'upcoming',
+    }, {
+      onSuccess: () => {
+        toast.success("Tournament created successfully!");
+        navigate("/organizer");
+      },
+      onError: (error: any) => {
+        toast.error(`Failed to create tournament: ${error.message || "Unknown error"}`);
+        console.error(error);
+      }
+    });
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto"
+      >
+        <Button
+          variant="ghost"
+          className="mb-6"
+          onClick={() => navigate("/organizer")}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+
+        <Card className="bg-card border-border shadow-elevated">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-3 rounded-full">
+                <Trophy className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl">Create New Tournament</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Free to participate — players request access, you approve</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name">Tournament Name *</Label>
+                <Input id="name" {...register("name")} placeholder="e.g. Summer Championship 2024" />
+                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Input id="description" {...register("description")} placeholder="Brief details about the tournament" />
+              </div>
+
+              {/* Format & Max Players */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="format">Format *</Label>
+                  <Select onValueChange={(val) => setValue("format", val)} defaultValue="single_elimination">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single_elimination">Single Elimination</SelectItem>
+                      <SelectItem value="double_elimination">Double Elimination</SelectItem>
+                      <SelectItem value="round_robin">Round Robin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.format && <p className="text-sm text-destructive">{errors.format.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="max_players">
+                    <Users className="inline w-3.5 h-3.5 mr-1" />
+                    Max Players
+                  </Label>
+                  <Input id="max_players" type="number" {...register("max_players")} placeholder="Leave blank for unlimited" />
+                  {errors.max_players && <p className="text-sm text-destructive">{errors.max_players.message}</p>}
+                </div>
+              </div>
+
+              {/* Start Date */}
+              <div className="space-y-2">
+                <Label htmlFor="start_date">
+                  <Calendar className="inline w-3.5 h-3.5 mr-1" />
+                  Start Date
+                </Label>
+                <Input id="start_date" type="datetime-local" {...register("start_date")} />
+              </div>
+
+              {/* Info Banner */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-sm text-muted-foreground">
+                <p className="font-medium text-primary mb-1">📋 Registration Flow</p>
+                <p>Players will submit a join request. You can approve or reject them from the Manage page before kicking off the tournament.</p>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full shadow-glow-primary"
+                size="lg"
+                disabled={createTournament.isPending}
+              >
+                {createTournament.isPending ? "Creating..." : "Create Tournament"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+};
+
+export default CreateTournamentPage;
