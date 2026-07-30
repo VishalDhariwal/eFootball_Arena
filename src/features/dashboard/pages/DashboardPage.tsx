@@ -76,8 +76,6 @@ const Dashboard = () => {
                   <span className={`text-xs font-semibold ${rank.color}`}>{rank.label}</span>
                   <span className="text-muted-foreground text-xs">·</span>
                   <span className="text-xs text-muted-foreground">{rating} AR</span>
-                  <span className="text-muted-foreground text-xs">·</span>
-                  <span className="text-xs text-muted-foreground">{profile?.player_id || "—"}</span>
                 </div>
               </div>
             </div>
@@ -148,7 +146,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center gap-3 shrink-0 ml-2">
                           {deadline && (
-                            <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
                               <Clock className="w-3 h-3" />
                               {new Intl.DateTimeFormat('default', { month: 'short', day: 'numeric' }).format(new Date(deadline))}
                             </div>
@@ -182,12 +180,11 @@ const Dashboard = () => {
           <motion.div {...fade} transition={{ duration: 0.2, delay: 0.15 }}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-foreground">Recent Matches</h2>
-              <span className="text-xs text-muted-foreground">{recentActivity.length} played</span>
             </div>
             <div className={`${card} overflow-hidden`}>
               {recentActivity.length > 0 ? (
                 <div className="divide-y divide-border overflow-y-auto max-h-[360px] hide-scrollbar">
-                  {recentActivity.map((match: any) => {
+                  {recentActivity.slice(0, 10).map((match: any) => {
                     const isWinner = match.winner_id === user?.id;
                     const opponentName = user?.id === match.player1_id ? match.player2?.display_name : match.player1?.display_name;
                     const myRatingHistory = (match.rating_history || []).filter((h: any) => h.player_id === user?.id);

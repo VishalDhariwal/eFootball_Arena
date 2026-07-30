@@ -44,29 +44,47 @@ export const useLeaderboard = () => {
   return useQuery({
     queryKey: ["leaderboard"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vw_global_leaderboard")
-        .select("*")
-        .order("arena_rating", { ascending: false })
-        .limit(100);
+      // Bypass vw_global_leaderboard to ensure we dynamically count matches
+      // and include players who played matches but didn't submit detailed stats.
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("id, display_name, player_id, elo_rating, avatar_id")
+        .order("elo_rating", { ascending: false });
 
       if (error) throw error;
+      if (!profiles || profiles.length === 0) return [];
       
-      if (!data || data.length === 0) return [];
-      
-      const playerIds = data.map(p => p.player_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, avatar_id")
-        .in("id", playerIds);
+      const { data: matches } = await supabase
+        .from("matches")
+        .select("player1_id, player2_id, winner_id")
+        .in("status", ["verified", "completed"]);
         
-      return data.map(player => {
-        const profile = profiles?.find(p => p.id === player.player_id);
+      const { data: archives } = await supabase
+        .from("season_archives")
+        .select("player_id, season_name")
+        .eq("global_rank", 1);
+
+      const leaderboard = profiles.map(p => {
+        const pMatches = matches?.filter(m => m.player1_id === p.id || m.player2_id === p.id) || [];
+        const wins = pMatches.filter(m => m.winner_id === p.id).length;
+        
         return {
-          ...player,
-          avatar_id: profile?.avatar_id
+          player_id: p.id,
+          display_name: p.display_name,
+          unique_player_id: p.player_id,
+          arena_rating: p.elo_rating,
+          total_matches: pMatches.length,
+          total_wins: wins,
+          is_previous_champion: archives?.some(a => a.player_id === p.id) || false,
+          champion_season: archives?.find(a => a.player_id === p.id)?.season_name || null,
+          avatar_id: p.avatar_id
         };
-      });
+      })
+      .filter(p => p.total_matches >= 1) // Must have played at least 1 match
+      .sort((a, b) => b.arena_rating - a.arena_rating)
+      .slice(0, 100);
+
+      return leaderboard;
     },
   });
 };

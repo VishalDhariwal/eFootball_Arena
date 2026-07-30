@@ -92,7 +92,6 @@ const TournamentStatsPage = () => {
                         {team.user?.display_name || 'Unknown'}
                         {isCurrentUser && ' (You)'}
                       </p>
-                      <p className="text-xs text-muted-foreground font-mono mt-1">{team.user?.player_id}</p>
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <div>
                           <p className={`text-xl font-display font-bold ${rc.text}`}>{team.points}</p>
@@ -170,7 +169,6 @@ const TournamentStatsPage = () => {
                             <span className="flex items-center gap-1">
                               <Shield className="w-3 h-3" /> {team.goals_conceded}GA
                             </span>
-                            <span className="font-mono">{team.user?.player_id}</span>
                           </div>
                         </div>
 

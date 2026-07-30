@@ -3,11 +3,22 @@ import { Trophy, Medal, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useLeaderboard, useAvatars } from "@/features/auth/hooks/useProfile";
-import { User } from "lucide-react";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { User, Target } from "lucide-react";
+import { useRef } from "react";
+import { Button } from "@/components/ui/button";
 
 export const LeaderboardPage = () => {
   const { data: leaderboard, isLoading } = useLeaderboard();
   const { data: avatars } = useAvatars();
+  const { user } = useAuth();
+  const myRowRef = useRef<HTMLTableRowElement>(null);
+
+  const scrollToMe = () => {
+    if (myRowRef.current) {
+      myRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -17,6 +28,17 @@ export const LeaderboardPage = () => {
         </motion.div>
         <h1 className="text-4xl font-display font-bold">Global Leaderboard</h1>
         <p className="text-muted-foreground mt-2">The top eFootball players on the platform</p>
+        
+        {user && leaderboard?.some(p => p.player_id === user.id) && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={scrollToMe}
+            className="mt-6 gap-2 border-primary/20 hover:bg-primary/10 text-primary"
+          >
+            <Target className="w-4 h-4" /> Find Me
+          </Button>
+        )}
       </div>
 
       <Card className="bg-card border-border shadow-elevated">
@@ -36,8 +58,14 @@ export const LeaderboardPage = () => {
                     Loading rankings...
                   </TableCell>
                 </TableRow>
-              ) : leaderboard?.map((player, index) => (
-                <TableRow key={player.player_id} className="hover:bg-primary/5 transition-colors group">
+              ) : leaderboard?.map((player, index) => {
+                const isMe = player.player_id === user?.id;
+                return (
+                <TableRow 
+                  key={player.player_id} 
+                  ref={isMe ? myRowRef : null}
+                  className={`transition-colors group ${isMe ? 'bg-primary/20 border-l-2 border-l-primary hover:bg-primary/30' : 'hover:bg-primary/5'}`}
+                >
                   <TableCell className="text-center font-display font-bold text-xl">
                     {index === 0 && <span className="text-yellow-500 flex items-center justify-center gap-1">1 <Trophy className="w-4 h-4" /></span>}
                     {index === 1 && <span className="text-gray-300 flex items-center justify-center gap-1">2 <Medal className="w-4 h-4" /></span>}
@@ -65,7 +93,6 @@ export const LeaderboardPage = () => {
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground">{player.unique_player_id}</div>
                       </div>
                     </div>
                   </TableCell>
@@ -77,7 +104,8 @@ export const LeaderboardPage = () => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

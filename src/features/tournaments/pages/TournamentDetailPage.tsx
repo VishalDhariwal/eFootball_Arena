@@ -104,7 +104,6 @@ const TournamentLeaderboard = ({
                     </div>
                     <div>
                       <div className="font-bold text-white">{(stat.user as any)?.display_name || "Unknown"}</div>
-                      <div className="text-xs text-muted-foreground font-mono">{(stat.user as any)?.player_id}</div>
                     </div>
                   </div>
                 </TableCell>
@@ -385,9 +384,6 @@ export const TournamentDetailPage = () => {
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">Champion</p>
                         <p className="text-sm font-bold text-yellow-400 truncate">{tournamentWinnerProfile.display_name}</p>
-                        {tournamentWinnerProfile.player_id && (
-                          <p className="text-xs text-muted-foreground font-mono">{tournamentWinnerProfile.player_id}</p>
-                        )}
                       </div>
                     </div>
                   )}
@@ -645,9 +641,6 @@ export const TournamentDetailPage = () => {
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm text-white truncate">{(reg.user as any)?.display_name || "Unknown"}</p>
                           </div>
-                          <span className="text-xs text-muted-foreground bg-muted/30 px-2 py-0.5 rounded font-mono shrink-0">
-                            {(reg.user as any)?.player_id}
-                          </span>
                         </li>
                       ))}
                   </ul>
