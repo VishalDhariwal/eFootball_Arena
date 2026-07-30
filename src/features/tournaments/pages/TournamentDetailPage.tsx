@@ -547,10 +547,17 @@ export const TournamentDetailPage = () => {
                             </div>
                             <div className="shrink-0">
                               {canSubmit ? (
-                                <Button size="sm" onClick={() => navigate(`/matches/${match.id}/submit`)}>
-                                  <Target className="w-3.5 h-3.5 mr-1.5" />
-                                  Submit Score
-                                </Button>
+                                match.match_submissions?.some((sub: any) => sub.player_id === user?.id) ? (
+                                  <Button size="sm" variant="outline" disabled className="text-muted-foreground border-border/50">
+                                    <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                                    Submitted
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" onClick={() => navigate(`/matches/${match.id}/submit`)}>
+                                    <Target className="w-3.5 h-3.5 mr-1.5" />
+                                    Submit Score
+                                  </Button>
+                                )
                               ) : match.status === 'verified' ? (
                                 <Button size="sm" variant="ghost" disabled>
                                   <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-green-400" /> Done

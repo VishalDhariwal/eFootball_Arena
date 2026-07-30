@@ -8,6 +8,7 @@ import { Trophy, ArrowLeft, UserPlus, Clock, CheckCircle2, Shield } from "lucide
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/services/supabase";
+import { countryCodes } from "@/lib/countryCodes";
 
 type Step = 'form' | 'success';
 
@@ -18,6 +19,7 @@ const RegisterPage = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    countryCode: "+91",
     phone: "",
 
     password: "",
@@ -47,8 +49,7 @@ const RegisterPage = () => {
         options: {
           data: {
             full_name: formData.fullName,
-
-            phone: formData.phone,
+            phone: `${formData.countryCode} ${formData.phone}`,
           },
         },
       });
@@ -137,16 +138,29 @@ const RegisterPage = () => {
 
                 <div>
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+91 99999 00000"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    required
-                    className="mt-1"
-                    disabled={isLoading}
-                  />
+                  <div className="flex gap-2 mt-1">
+                    <select
+                      className="flex h-10 w-24 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formData.countryCode}
+                      onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                      disabled={isLoading}
+                    >
+                      <option value="+91">🇮🇳 +91</option>
+                      {countryCodes.filter(c => c.code !== "+91").map((c, idx) => (
+                        <option key={idx} value={c.code}>{c.label}</option>
+                      ))}
+                    </select>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="99999 00000"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/[^0-9]/g, '') })}
+                      required
+                      className="flex-1"
+                      disabled={isLoading}
+                    />
+                  </div>
                 </div>
 
 
