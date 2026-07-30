@@ -20,13 +20,14 @@ const PendingAccessPage = () => {
   const isRejected = profile?.status === 'rejected';
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-lg text-center"
+        transition={{ duration: 0.2 }}
+        className="w-full max-w-sm text-center"
       >
-        <Card className="p-10 bg-card border-border shadow-elevated">
+        <Card className="p-8 bg-card border-border">
           {/* Icon */}
           <div className="flex justify-center mb-8">
             <div className="relative">

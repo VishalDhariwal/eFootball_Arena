@@ -26,7 +26,8 @@ export const useUpdateProfile = () => {
     mutationFn: async ({ userId, updates }: { userId: string; updates: any }) => {
       const { data, error } = await supabase
         .from("profiles")
-        .upsert({ id: userId, ...updates })
+        .update(updates)
+        .eq("id", userId)
         .select()
         .single();
 
@@ -50,7 +51,22 @@ export const useLeaderboard = () => {
         .limit(100);
 
       if (error) throw error;
-      return data;
+      
+      if (!data || data.length === 0) return [];
+      
+      const playerIds = data.map(p => p.player_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, avatar_id")
+        .in("id", playerIds);
+        
+      return data.map(player => {
+        const profile = profiles?.find(p => p.id === player.player_id);
+        return {
+          ...player,
+          avatar_id: profile?.avatar_id
+        };
+      });
     },
   });
 };
@@ -71,5 +87,21 @@ export const useUserAchievements = (userId: string | undefined) => {
       return data;
     },
     enabled: !!userId,
+  });
+};
+
+export const useAvatars = () => {
+  return useQuery({
+    queryKey: ["avatars"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("player_avatars")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      // If the table doesn't exist yet, return empty array gracefully
+      if (error) return [];
+      return data ?? [];
+    },
   });
 };

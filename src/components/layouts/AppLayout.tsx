@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Trophy, User, BarChart3, Calendar, Shield, LayoutDashboard, Menu } from "lucide-react";
+import { LogOut, Home, Trophy, User, BarChart3, Calendar, Shield, LayoutDashboard, Menu, Bell } from "lucide-react";
 import { supabase } from "@/services/supabase";
 import { toast } from "sonner";
 import { NotificationsPopover } from "@/features/notifications/components/NotificationsPopover";
@@ -31,136 +31,134 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   const navLinkClass = (path: string) =>
-    `inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+    `inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${
       isActive(path)
-        ? 'bg-primary/15 text-primary'
-        : 'text-muted-foreground hover:text-white hover:bg-white/5'
+        ? 'bg-primary/10 text-primary'
+        : 'text-muted-foreground hover:text-foreground hover:bg-white/4'
     }`;
 
+  const playerLinks = [
+    { to: '/dashboard', icon: Home, label: 'Dashboard' },
+    { to: '/tournaments', icon: Trophy, label: 'Tournaments' },
+    { to: '/my-tournaments', icon: Calendar, label: 'My Tournaments' },
+    { to: '/stats', icon: BarChart3, label: 'Stats' },
+    { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
+  ];
+
+  const adminLinks = [
+    { to: '/admin', icon: LayoutDashboard, label: 'Overview' },
+    { to: '/admin/users', icon: User, label: 'Users' },
+    { to: '/admin/tournaments', icon: Trophy, label: 'Tournaments' },
+    { to: '/organizer', icon: Shield, label: 'Organizer' },
+  ];
+
+  const activeLinks = isAdmin ? adminLinks : playerLinks;
+
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4 md:gap-6">
-            
+    <div className="min-h-screen bg-background">
+      {/* Navbar */}
+      <nav className="h-14 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 h-full flex items-center justify-between gap-4">
+          
+          {/* Left: Logo + Nav */}
+          <div className="flex items-center gap-6">
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden shrink-0 -ml-2">
-                  <Menu className="w-5 h-5 text-white" />
+                <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
+                  <Menu className="w-4 h-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] p-0 bg-background/95 backdrop-blur-xl border-r border-white/10">
-                <div className="p-4 border-b border-white/10">
-                  <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setMobileMenuOpen(false)} className="text-xl font-display font-bold text-primary flex items-center gap-2">
-                    <span className="text-white">eFootball</span> Arena
+              <SheetContent side="left" className="w-64 p-0 bg-background border-r border-border">
+                <div className="p-4 border-b border-border">
+                  <Link
+                    to={isAdmin ? "/admin" : "/dashboard"}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-base font-semibold text-foreground"
+                  >
+                    eFootball <span className="text-primary">Arena</span>
                   </Link>
                 </div>
-                <div className="flex flex-col gap-1 p-4 overflow-y-auto">
-                  {!isAdmin && (
-                    <>
-                      <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/dashboard')}>
-                        <Home className="w-4 h-4" /> Dashboard
-                      </Link>
-                      <Link to="/tournaments" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/tournaments')}>
-                        <Trophy className="w-4 h-4" /> Tournaments
-                      </Link>
-                      <Link to="/my-tournaments" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/my-tournaments')}>
-                        <Calendar className="w-4 h-4" /> My Tournaments
-                      </Link>
-                      <Link to="/stats" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/stats')}>
-                        <BarChart3 className="w-4 h-4" /> My Stats
-                      </Link>
-                      <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/leaderboard')}>
-                        <Trophy className="w-4 h-4" /> Leaderboard
-                      </Link>
-                      {isOrganizer && (
-                        <Link to="/organizer" onClick={() => setMobileMenuOpen(false)} className={`${navLinkClass('/organizer')} text-secondary hover:text-secondary`}>
-                          <Shield className="w-4 h-4" /> Host Tournament
-                        </Link>
-                      )}
-                    </>
+                <div className="flex flex-col gap-0.5 p-3">
+                  {activeLinks.map(link => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={navLinkClass(link.to)}
+                    >
+                      <link.icon className="w-4 h-4" />
+                      {link.label}
+                    </Link>
+                  ))}
+                  {!isAdmin && isOrganizer && (
+                    <Link
+                      to="/organizer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={navLinkClass('/organizer')}
+                    >
+                      <Shield className="w-4 h-4" />
+                      Host Tournament
+                    </Link>
                   )}
-                  {isAdmin && (
-                    <>
-                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/admin')}>
-                        <LayoutDashboard className="w-4 h-4" /> Overview
-                      </Link>
-                      <Link to="/admin/users" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/admin/users')}>
-                        <User className="w-4 h-4" /> Users
-                      </Link>
-                      <Link to="/admin/tournaments" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/admin/tournaments')}>
-                        <Trophy className="w-4 h-4" /> Tournaments
-                      </Link>
-                      <Link to="/organizer" onClick={() => setMobileMenuOpen(false)} className={navLinkClass('/organizer')}>
-                        <Shield className="w-4 h-4" /> Organizer
-                      </Link>
-                    </>
-                  )}
+                  <div className="border-t border-border mt-2 pt-2">
+                    <button
+                      onClick={handleLogout}
+                      className="inline-flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/4 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign out
+                    </button>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
 
-            <Link to={isAdmin ? "/admin" : "/dashboard"} className="text-xl font-display font-bold text-primary flex items-center gap-2">
-              <span className="text-white">eFootball</span> Arena
+            {/* Logo */}
+            <Link
+              to={isAdmin ? "/admin" : "/dashboard"}
+              className="text-base font-semibold text-foreground tracking-tight"
+            >
+              eFootball <span className="text-primary">Arena</span>
             </Link>
 
-            {/* User Navigation Desktop */}
-            {!isAdmin && (
-              <div className="hidden md:flex gap-1 items-center">
-                <Link to="/dashboard" className={navLinkClass('/dashboard')}>
-                  <Home className="w-4 h-4" /> Dashboard
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-0.5">
+              {activeLinks.map(link => (
+                <Link key={link.to} to={link.to} className={navLinkClass(link.to)}>
+                  <link.icon className="w-4 h-4" />
+                  {link.label}
                 </Link>
-                <Link to="/tournaments" className={navLinkClass('/tournaments')}>
-                  <Trophy className="w-4 h-4" /> Tournaments
-                </Link>
-                <Link to="/my-tournaments" className={navLinkClass('/my-tournaments')}>
-                  <Calendar className="w-4 h-4" /> My Tournaments
-                </Link>
-                <Link to="/stats" className={navLinkClass('/stats')}>
-                  <BarChart3 className="w-4 h-4" /> My Stats
-                </Link>
-                <Link to="/leaderboard" className={navLinkClass('/leaderboard')}>
-                  <Trophy className="w-4 h-4" /> Leaderboard
-                </Link>
-                {isOrganizer && (
-                  <Link to="/organizer" className={`${navLinkClass('/organizer')} text-secondary hover:text-secondary`}>
-                    <Shield className="w-4 h-4" /> Host Tournament
-                  </Link>
-                )}
-              </div>
-            )}
-
-            {/* Admin Navigation */}
-            {isAdmin && (
-              <div className="hidden md:flex gap-1 items-center">
-                <Link to="/admin" className={navLinkClass('/admin')}>
-                  <LayoutDashboard className="w-4 h-4" /> Overview
-                </Link>
-                <Link to="/admin/users" className={navLinkClass('/admin/users')}>
-                  <User className="w-4 h-4" /> Users
-                </Link>
-                <Link to="/admin/tournaments" className={navLinkClass('/admin/tournaments')}>
-                  <Trophy className="w-4 h-4" /> Tournaments
-                </Link>
+              ))}
+              {!isAdmin && isOrganizer && (
                 <Link to="/organizer" className={navLinkClass('/organizer')}>
-                  <Shield className="w-4 h-4" /> Organizer
+                  <Shield className="w-4 h-4" />
+                  Host
                 </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1">
             <NotificationsPopover />
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/profile"><User className="w-5 h-5" /></Link>
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <Link to="/profile">
+                <User className="w-4 h-4" />
+              </Link>
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="w-5 h-5 text-muted-foreground hover:text-white" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hidden md:flex"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4 text-muted-foreground" />
             </Button>
           </div>
         </div>
       </nav>
+
       <main>
         {children}
       </main>

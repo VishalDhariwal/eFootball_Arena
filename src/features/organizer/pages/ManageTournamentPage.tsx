@@ -13,6 +13,9 @@ import { useDisputedMatches, useResolveDispute } from "@/features/matches/hooks/
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TournamentBracket } from "@/features/tournaments/components/TournamentBracket";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Mail, Phone, Gamepad2, Hash } from "lucide-react";
 
 // ─── Bracket Utilities ────────────────────────────────────────────────────────
 const BYE_ID = "__BYE__";
@@ -185,6 +188,7 @@ export const ManageTournamentPage = () => {
   const generateManualBracket = useGenerateManualBracket();
   const resolveDispute = useResolveDispute();
   const revertTournament = useRevertTournament();
+  const { isAdmin } = useAuth();
 
   const approvedCount = registrations?.filter(r => r.registration_status === 'approved').length || 0;
   const pendingCount = registrations?.filter(r => r.registration_status === 'pending').length || 0;
@@ -192,6 +196,7 @@ export const ManageTournamentPage = () => {
   const [isManualMode, setIsManualMode] = useState(false);
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [defaultFixtures, setDefaultFixtures] = useState<Fixture[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   // Compute derived values
   const approvedPlayers = useMemo((): PlayerSlot[] =>
@@ -613,7 +618,11 @@ export const ManageTournamentPage = () => {
                       const order = { pending: 0, approved: 1, rejected: 2 };
                       return (order[a.registration_status as keyof typeof order] ?? 1) - (order[b.registration_status as keyof typeof order] ?? 1);
                     }).map((reg) => (
-                      <TableRow key={reg.id} className={reg.registration_status === 'pending' ? 'bg-yellow-500/5' : ''}>
+                      <TableRow 
+                        key={reg.id} 
+                        className={`${reg.registration_status === 'pending' ? 'bg-yellow-500/5' : ''} ${isAdmin ? 'cursor-pointer hover:bg-white/5 transition-colors' : ''}`}
+                        onClick={() => isAdmin && setSelectedUser(reg.user)}
+                      >
                         <TableCell className="font-medium text-white">{(reg.user as any)?.display_name || "Unknown"}</TableCell>
                         <TableCell className="text-muted-foreground">{(reg.user as any)?.game_id || '—'}</TableCell>
                         <TableCell className="text-muted-foreground font-mono">{(reg.user as any)?.player_id || '—'}</TableCell>
@@ -625,10 +634,10 @@ export const ManageTournamentPage = () => {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             {reg.registration_status !== 'approved' && tournament.status !== 'live' && (
-                              <Button
+                                <Button
                                 size="sm" variant="outline"
                                 className="border-green-500/50 text-green-400 hover:bg-green-500 hover:text-white"
-                                onClick={() => handleUpdateStatus(reg.id, 'approved')}
+                                onClick={(e) => { e.stopPropagation(); handleUpdateStatus(reg.id, 'approved'); }}
                                 disabled={updateStatus.isPending}
                               >
                                 <Check className="w-4 h-4 mr-1" /> Approve
@@ -638,7 +647,7 @@ export const ManageTournamentPage = () => {
                               <Button
                                 size="sm" variant="outline"
                                 className="border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white"
-                                onClick={() => handleUpdateStatus(reg.id, 'rejected')}
+                                onClick={(e) => { e.stopPropagation(); handleUpdateStatus(reg.id, 'rejected'); }}
                                 disabled={updateStatus.isPending}
                               >
                                 <X className="w-4 h-4 mr-1" /> Reject
@@ -655,6 +664,65 @@ export const ManageTournamentPage = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* User Details Dialog (Admin Only) */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-4 border-b border-border pb-4">
+                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary font-display text-2xl font-bold">
+                  {selectedUser.display_name?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">{selectedUser.display_name}</h3>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                  <Mail className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email Address</p>
+                    <p className="font-medium">{selectedUser.email || '—'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                  <Phone className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Phone Number</p>
+                    <p className="font-medium">{selectedUser.phone_number || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                    <Hash className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Player ID</p>
+                      <p className="font-mono text-sm">{selectedUser.player_id || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                    <Gamepad2 className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Game ID</p>
+                      <p className="font-mono text-sm">{selectedUser.game_id || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setSelectedUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

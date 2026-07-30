@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trophy, ArrowLeft, UserPlus, Clock, CheckCircle2, Shield } from "lucide-react";
+import { UserPlus, Clock, CheckCircle2, Shield, Swords } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/services/supabase";
@@ -21,7 +20,6 @@ const RegisterPage = () => {
     email: "",
     countryCode: "+91",
     phone: "",
-
     password: "",
     confirmPassword: "",
   });
@@ -29,19 +27,15 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
-
     if (formData.password.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
     }
-
     setIsLoading(true);
-
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
@@ -53,20 +47,11 @@ const RegisterPage = () => {
           },
         },
       });
-
-      if (signUpError) {
-        toast.error(signUpError.message);
-        return;
-      }
-
-      // Profile is created by trigger with status='pending'
+      if (signUpError) { toast.error(signUpError.message); return; }
       setPlayerName(formData.fullName);
       setStep('success');
-
-      // Sign out immediately so they can't bypass the pending screen
       await supabase.auth.signOut();
-
-    } catch (err) {
+    } catch {
       toast.error("An unexpected error occurred during registration");
     } finally {
       setIsLoading(false);
@@ -74,73 +59,61 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <AnimatePresence mode="wait">
         {step === 'form' ? (
           <motion.div
             key="form"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="w-full max-w-md"
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="w-full max-w-sm"
           >
-            <Button
-              variant="ghost"
-              className="mb-6"
-              onClick={() => navigate("/")}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Button>
-
-            <Card className="p-8 bg-card border-border shadow-elevated">
-              <div className="flex items-center justify-center mb-6">
-                <div className="bg-primary/10 p-4 rounded-full">
-                  <Trophy className="w-12 h-12 text-primary" />
-                </div>
+            {/* Logo */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 mb-4">
+                <Swords className="w-5 h-5 text-primary" />
               </div>
+              <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
+              <p className="text-sm text-muted-foreground mt-1">Request access to compete</p>
+            </div>
 
-              <h1 className="text-3xl font-display font-bold text-center mb-2">
-                Join the Arena
-              </h1>
-              <p className="text-center text-muted-foreground mb-8">
-                Submit your access request to compete
-              </p>
-
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.4),0_4px_16px_rgba(0,0,0,0.2)]">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="fullName">Full Name</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="fullName" className="text-sm font-medium">Full Name</Label>
                   <Input
                     id="fullName"
                     type="text"
-                    placeholder="Enter your full name"
+                    placeholder="Your full name"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     required
-                    className="mt-1"
                     disabled={isLoading}
+                    className="h-10 bg-background border-border"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your.email@example.com"
+                    placeholder="you@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="mt-1"
                     disabled={isLoading}
+                    className="h-10 bg-background border-border"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="flex gap-2 mt-1">
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                  <div className="flex gap-2">
                     <select
-                      className="flex h-10 w-24 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="h-10 w-28 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                       value={formData.countryCode}
                       onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
                       disabled={isLoading}
@@ -157,113 +130,106 @@ const RegisterPage = () => {
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/[^0-9]/g, '') })}
                       required
-                      className="flex-1"
                       disabled={isLoading}
+                      className="flex-1 h-10 bg-background border-border"
                     />
                   </div>
                 </div>
 
-
-                <div>
-                  <Label htmlFor="password">Password</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Create a strong password"
+                    placeholder="Min. 6 characters"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
-                    className="mt-1"
                     disabled={isLoading}
+                    className="h-10 bg-background border-border"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
-                    placeholder="Re-enter your password"
+                    placeholder="Re-enter password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     required
-                    className="mt-1"
                     disabled={isLoading}
+                    className="h-10 bg-background border-border"
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full shadow-glow-primary"
-                  size="lg"
-                  disabled={isLoading}
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {isLoading ? "Submitting Request..." : "Request Access"}
+                <Button type="submit" className="w-full h-10 font-medium mt-2" disabled={isLoading}>
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Submitting...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <UserPlus className="w-4 h-4" />
+                      Request Access
+                    </span>
+                  )}
                 </Button>
               </form>
 
-              <div className="mt-6 text-center">
+              <div className="mt-4 pt-4 border-t border-border text-center">
                 <p className="text-sm text-muted-foreground">
                   Already have an account?{" "}
                   <button
                     type="button"
                     onClick={() => navigate("/login")}
-                    className="text-primary hover:underline"
+                    className="text-primary hover:text-primary/80 font-medium transition-colors"
                   >
-                    Sign in here
+                    Sign in
                   </button>
                 </p>
               </div>
-            </Card>
+            </div>
           </motion.div>
         ) : (
           <motion.div
             key="success"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md text-center"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-full max-w-sm"
           >
-            <Card className="p-10 bg-card border-border shadow-elevated">
-              {/* Icon */}
-              <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Shield className="w-12 h-12 text-primary" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-black" />
-                  </div>
+            <div className="bg-card border border-border rounded-2xl p-8 shadow-[0_1px_3px_rgba(0,0,0,0.4),0_4px_16px_rgba(0,0,0,0.2)] text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 mb-6">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+
+              <h1 className="text-xl font-bold mb-1">Request Submitted</h1>
+              <p className="text-sm text-muted-foreground mb-6">
+                <span className="text-foreground font-medium">{playerName}</span>, your account is pending admin approval.
+              </p>
+
+              <div className="bg-background border border-border rounded-xl p-4 mb-6 text-left space-y-3">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Account created successfully</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Awaiting admin approval before you can log in</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Typically approved within 24 hours</p>
                 </div>
               </div>
 
-              <h1 className="text-3xl font-display font-bold mb-3">
-                Request Sent!
-              </h1>
-              <p className="text-xl text-primary font-semibold mb-4">{playerName}</p>
-
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 mb-6 text-left space-y-3">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-muted-foreground">Your account has been created and is <strong className="text-white">pending admin approval</strong>.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-muted-foreground">Once approved, you'll be able to log in and join tournaments.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-muted-foreground">Approval is typically done within 24 hours.</p>
-                </div>
-              </div>
-
-              <Button
-                className="w-full shadow-glow-primary"
-                onClick={() => navigate("/login")}
-              >
-                Go to Login
+              <Button className="w-full h-10 font-medium" onClick={() => navigate("/login")}>
+                Go to Sign In
               </Button>
-            </Card>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

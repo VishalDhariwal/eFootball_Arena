@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, CheckCircle, X, Clock, Search, UserCheck, UserX, Filter } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Users, CheckCircle, X, Clock, Search, UserCheck, UserX, Filter, Trash, Mail, Phone, Gamepad2, Hash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase";
@@ -44,11 +45,30 @@ const useUpdateUserStatus = () => {
   });
 };
 
+const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.rpc('rpc_admin_delete_user', { p_user_id: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-users'] });
+      toast.success("User deleted successfully");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to delete user: " + err.message);
+    }
+  });
+};
+
 const AdminUsersPage = () => {
   const { data: users, isLoading } = useAllUsers();
   const updateStatus = useUpdateUserStatus();
+  const deleteUser = useDeleteUser();
   const [filter, setFilter] = useState<'all' | ProfileStatus>('all');
   const [search, setSearch] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const filtered = users?.filter(u => {
     const matchFilter = filter === 'all' || u.status === filter;
@@ -146,7 +166,8 @@ const AdminUsersPage = () => {
                   key={user.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="grid grid-cols-12 px-4 py-3.5 items-center hover:bg-white/2 transition-colors"
+                  className="grid grid-cols-12 px-4 py-3.5 items-center hover:bg-white/5 transition-colors cursor-pointer"
+                  onClick={() => setSelectedUser(user)}
                 >
                   <div className="col-span-3">
                     <p className="font-semibold text-white truncate">{user.display_name}</p>
@@ -168,7 +189,7 @@ const AdminUsersPage = () => {
                         size="sm"
                         variant="outline"
                         className="border-green-500/50 text-green-400 hover:bg-green-500 hover:text-white h-8 px-2"
-                        onClick={() => handleStatus(user.id, 'approved')}
+                        onClick={(e) => { e.stopPropagation(); handleStatus(user.id, 'approved'); }}
                         disabled={updateStatus.isPending}
                       >
                         <CheckCircle className="w-3.5 h-3.5 mr-1" /> Approve
@@ -179,12 +200,26 @@ const AdminUsersPage = () => {
                         size="sm"
                         variant="outline"
                         className="border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white h-8 px-2"
-                        onClick={() => handleStatus(user.id, 'rejected')}
+                        onClick={(e) => { e.stopPropagation(); handleStatus(user.id, 'rejected'); }}
                         disabled={updateStatus.isPending}
                       >
                         <X className="w-3.5 h-3.5 mr-1" /> Reject
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white h-8 px-2 ml-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Are you sure you want to completely delete ${user.display_name}? This action cannot be undone.`)) {
+                          deleteUser.mutate(user.id);
+                        }
+                      }}
+                      disabled={deleteUser.isPending}
+                    >
+                      <Trash className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </motion.div>
               ))}
@@ -196,6 +231,68 @@ const AdminUsersPage = () => {
           </div>
         </Card>
       </motion.div>
+
+      {/* User Details Dialog */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-4 border-b border-border pb-4">
+                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary font-display text-2xl font-bold">
+                  {selectedUser.display_name?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">{selectedUser.display_name}</h3>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border font-medium capitalize ${statusColors[selectedUser.status as ProfileStatus] || statusColors.pending}`}>
+                    {selectedUser.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                  <Mail className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email Address</p>
+                    <p className="font-medium">{selectedUser.email || '—'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                  <Phone className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Phone Number</p>
+                    <p className="font-medium">{selectedUser.phone_number || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                    <Hash className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Player ID</p>
+                      <p className="font-mono text-sm">{selectedUser.player_id || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                    <Gamepad2 className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Game ID</p>
+                      <p className="font-mono text-sm">{selectedUser.game_id || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setSelectedUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

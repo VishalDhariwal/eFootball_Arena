@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Trophy, ArrowLeft, Users, CheckCircle, Clock, XCircle, Settings,
+  Trophy, ArrowLeft, Users, User, CheckCircle, Clock, XCircle, Settings,
   Swords, LayoutGrid, ChevronRight, Target, Calendar,
   Shield, FileText, Flag, Star, Medal
 } from "lucide-react";
@@ -12,6 +12,7 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useTournament, useFinishTournament } from "@/features/tournaments/hooks/useTournaments";
 import { useUserRegistration, useRegisterForTournament, useRegistrations } from "@/features/tournaments/hooks/useRegistrations";
 import { useMatches, useTournamentLeaderboard } from "@/features/matches/hooks/useMatches";
+import { useAvatars } from "@/features/auth/hooks/useProfile";
 import { toast } from "sonner";
 import { TournamentBracket } from "@/features/tournaments/components/TournamentBracket";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,7 +28,9 @@ const TournamentLeaderboard = ({
   tournamentId: string;
   registrations: any[] | undefined;
 }) => {
+}) => {
   const { data: stats, isLoading } = useTournamentLeaderboard(tournamentId);
+  const { data: avatars } = useAvatars();
 
   if (isLoading) return <div className="text-center p-8 text-muted-foreground">Loading leaderboard...</div>;
 
@@ -64,13 +67,13 @@ const TournamentLeaderboard = ({
 
   return (
     <Card className="bg-card border-border overflow-hidden">
-      <Table>
+      <Table className="min-w-[500px]">
         <TableHeader>
           <TableRow>
             <TableHead className="w-12 text-center">#</TableHead>
             <TableHead>Player</TableHead>
-            <TableHead className="text-center hidden sm:table-cell">P</TableHead>
-            <TableHead className="text-center hidden sm:table-cell">W</TableHead>
+            <TableHead className="text-center">P</TableHead>
+            <TableHead className="text-center">W</TableHead>
             <TableHead className="text-center">GF</TableHead>
             <TableHead className="text-center">GA</TableHead>
             <TableHead className="text-center font-bold">GD</TableHead>
@@ -88,11 +91,26 @@ const TournamentLeaderboard = ({
                   {medal || index + 1}
                 </TableCell>
                 <TableCell>
-                  <div className="font-bold text-white">{(stat.user as any)?.display_name || "Unknown"}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{(stat.user as any)?.player_id}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
+                      {(() => {
+                        const avatarId = (stat.user as any)?.avatar_id;
+                        const url = avatars?.find(a => a.id === avatarId)?.image_url;
+                        return url ? (
+                          <img src={url} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-4 h-4 text-muted-foreground" />
+                        );
+                      })()}
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">{(stat.user as any)?.display_name || "Unknown"}</div>
+                      <div className="text-xs text-muted-foreground font-mono">{(stat.user as any)?.player_id}</div>
+                    </div>
+                  </div>
                 </TableCell>
-                <TableCell className="text-center hidden sm:table-cell">{stat.matches_played || 0}</TableCell>
-                <TableCell className="text-center text-green-400 font-bold hidden sm:table-cell">{stat.wins || 0}</TableCell>
+                <TableCell className="text-center">{stat.matches_played || 0}</TableCell>
+                <TableCell className="text-center text-green-400 font-bold">{stat.wins || 0}</TableCell>
                 <TableCell className="text-center">{gf}</TableCell>
                 <TableCell className="text-center">{ga}</TableCell>
                 <TableCell className={`text-center font-bold ${gd > 0 ? 'text-green-400' : gd < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
@@ -207,14 +225,14 @@ export const TournamentDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-hero">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!tournament) {
-    return <div className="flex items-center justify-center h-screen bg-gradient-hero"><p className="text-white">Tournament not found</p></div>;
+    return <div className="flex items-center justify-center h-screen bg-background"><p className="text-muted-foreground">Tournament not found</p></div>;
   }
 
   // isFinished: true the moment we detect a winner — even before DB status propagates.
@@ -235,16 +253,16 @@ export const TournamentDetailPage = () => {
   const activeTabValid = tabs.some(t => t.id === activeTab);
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen bg-background">
       {/* ── Back button ──────────────────────────────────────────────────── */}
-      <div className="border-b border-border/50 bg-background/30 backdrop-blur-sm sticky top-0 z-10">
+      <div className="border-b border-border bg-background sticky top-0 z-10">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-3 py-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/tournaments")} className="text-muted-foreground hover:text-white shrink-0">
-              <ArrowLeft className="w-4 h-4 mr-1.5" /> Tournaments
+          <div className="flex items-center gap-2 py-2.5">
+            <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={() => navigate("/tournaments")}>
+              <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Tournaments
             </Button>
-            <span className="text-muted-foreground/50">/</span>
-            <span className="text-sm font-medium truncate">{tournament.name}</span>
+            <span className="text-muted-foreground/40 text-xs">/</span>
+            <span className="text-xs font-medium text-foreground truncate">{tournament.name}</span>
           </div>
         </div>
       </div>
@@ -252,42 +270,43 @@ export const TournamentDetailPage = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
 
         {/* ── Tournament Header ─────────────────────────────────────────── */}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <Card className="bg-gradient-card border-border overflow-hidden">
-            <CardContent className="p-5 sm:p-6">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="mb-6">
+          <Card className="bg-card border-border">
+            <CardContent className="p-5">
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                {/* Left: name + badges */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                      ${isFinished
-                        ? 'bg-yellow-500/15 text-yellow-400'
-                        : 'bg-primary/20 text-primary'}`}>
-                      {isFinished ? '🏁 Finished' : tournament.status}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className={`px-2 py-0.5 rounded-md text-xs font-semibold capitalize border ${
+                      isFinished
+                        ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                        : tournament.status === 'live'
+                          ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                          : 'bg-primary/10 text-primary border-primary/20'
+                    }`}>
+                      {isFinished ? 'Completed' : tournament.status}
                     </span>
-                    <span className="px-2.5 py-0.5 bg-secondary/20 text-secondary rounded-full text-xs font-medium capitalize">
+                    <span className="px-2 py-0.5 bg-muted border border-border rounded-md text-xs font-medium text-muted-foreground capitalize">
                       {tournament.format?.replace('_', ' ')}
                     </span>
                     {!isFinished && tournament.status === 'live' && (
-                      <span className="flex items-center gap-1 px-2.5 py-0.5 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Live
+                      <span className="flex items-center gap-1.5 text-xs text-green-500 font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Live now
                       </span>
                     )}
                     {tournamentWinnerProfile && (
-                      <span className="flex items-center gap-1 px-2.5 py-0.5 bg-yellow-500/15 text-yellow-400 rounded-full text-xs font-medium">
-                        <Star className="w-3 h-3" /> Winner: {tournamentWinnerProfile.display_name}
+                      <span className="flex items-center gap-1.5 px-2 py-0.5 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded-md text-xs font-semibold">
+                        <Trophy className="w-3 h-3" /> {tournamentWinnerProfile.display_name}
                       </span>
                     )}
                     {registration && !isFinished && <RegBadge status={regStatus} />}
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-display font-bold mb-3 leading-tight">{tournament.name}</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold mb-3 leading-tight">{tournament.name}</h1>
 
-                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
-
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" />
-                      <span className="text-green-400 font-medium">{approvedCount}</span>
+                      <span className="text-green-500 font-medium">{approvedCount}</span>
                       <span>/ {tournament.max_players || '∞'} players</span>
                     </span>
                     {tournament.start_date && (
@@ -299,25 +318,19 @@ export const TournamentDetailPage = () => {
                   </div>
                 </div>
 
-                {/* Right: actions */}
                 <div className="flex flex-wrap gap-2 sm:flex-col sm:items-end sm:shrink-0">
                   {canManage && (
-                    <Button size="sm" variant="secondary" onClick={() => navigate(`/organizer/tournaments/${tournament.id}`)}>
+                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => navigate(`/organizer/tournaments/${tournament.id}`)}>
                       <Settings className="w-3.5 h-3.5 mr-1.5" /> Manage
                     </Button>
                   )}
                   {!canManage && !registration && user && !isFinished && tournament.status !== 'live' && (
-                    <Button
-                      size="sm"
-                      className="shadow-glow-primary"
-                      onClick={handleRegister}
-                      disabled={registerMutation.isPending}
-                    >
+                    <Button size="sm" className="h-8 text-xs" onClick={handleRegister} disabled={registerMutation.isPending}>
                       {registerMutation.isPending ? "Sending..." : "Request to Join"}
                     </Button>
                   )}
                   {!user && !isFinished && (
-                    <Button size="sm" className="shadow-glow-primary" onClick={() => navigate("/login")}>Login to Join</Button>
+                    <Button size="sm" className="h-8 text-xs" onClick={() => navigate("/login")}>Login to Join</Button>
                   )}
                 </div>
               </div>
@@ -326,8 +339,8 @@ export const TournamentDetailPage = () => {
         </motion.div>
 
         {/* ── Tab Bar ───────────────────────────────────────────────────── */}
-        <div className="mb-6">
-          <div className="flex overflow-x-auto gap-1 pb-1 scrollbar-hide -mx-1 px-1">
+        <div className="mb-6 border-b border-border">
+          <div className="flex overflow-x-auto gap-0 -mb-px hide-scrollbar">
             {tabs.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id && activeTabValid;
@@ -335,11 +348,11 @@ export const TournamentDetailPage = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all shrink-0
-                    ${isActive
-                      ? 'bg-primary text-primary-foreground shadow-glow-primary'
-                      : 'text-muted-foreground hover:text-white hover:bg-white/5'
-                    }`}
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 shrink-0 ${
+                    isActive
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {tab.label}
@@ -366,20 +379,16 @@ export const TournamentDetailPage = () => {
                 <div className="md:col-span-2 space-y-5">
                   {/* Winner Banner */}
                   {tournamentWinnerProfile && (
-                    <div className="relative overflow-hidden rounded-xl border border-yellow-500/30 bg-gradient-to-r from-yellow-500/15 via-yellow-400/5 to-transparent p-5">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center shrink-0">
-                          <Medal className="w-7 h-7 text-yellow-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-yellow-500/80 font-medium uppercase tracking-wider mb-0.5">Tournament Champion</p>
-                          <p className="text-xl font-display font-bold text-yellow-300 truncate">
-                            🏆 {tournamentWinnerProfile.display_name}
-                          </p>
-                          {tournamentWinnerProfile.player_id && (
-                            <p className="text-xs text-muted-foreground font-mono mt-0.5">{tournamentWinnerProfile.player_id}</p>
-                          )}
-                        </div>
+                    <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
+                        <Trophy className="w-4 h-4 text-yellow-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">Champion</p>
+                        <p className="text-sm font-bold text-yellow-400 truncate">{tournamentWinnerProfile.display_name}</p>
+                        {tournamentWinnerProfile.player_id && (
+                          <p className="text-xs text-muted-foreground font-mono">{tournamentWinnerProfile.player_id}</p>
+                        )}
                       </div>
                     </div>
                   )}

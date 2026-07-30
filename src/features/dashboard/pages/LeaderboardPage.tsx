@@ -2,10 +2,12 @@ import { motion } from "framer-motion";
 import { Trophy, Medal, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useLeaderboard } from "@/features/auth/hooks/useProfile";
+import { useLeaderboard, useAvatars } from "@/features/auth/hooks/useProfile";
+import { User } from "lucide-react";
 
 export const LeaderboardPage = () => {
   const { data: leaderboard, isLoading } = useLeaderboard();
+  const { data: avatars } = useAvatars();
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -43,15 +45,29 @@ export const LeaderboardPage = () => {
                     {index > 2 && <span className="text-muted-foreground group-hover:text-white transition-colors">{index + 1}</span>}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg">{player.display_name || "Unknown Player"}</span>
-                      {player.is_previous_champion && (
-                        <span className="bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-yellow-500/30" title={`Champion: ${player.champion_season}`}>
-                          Prev Champ
-                        </span>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
+                        {(() => {
+                          const url = avatars?.find(a => a.id === player.avatar_id)?.image_url;
+                          return url ? (
+                            <img src={url} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-5 h-5 text-muted-foreground" />
+                          );
+                        })()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-lg">{player.display_name || "Unknown Player"}</span>
+                          {player.is_previous_champion && (
+                            <span className="bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-yellow-500/30" title={`Champion: ${player.champion_season}`}>
+                              Prev Champ
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">{player.unique_player_id}</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">{player.unique_player_id}</div>
                   </TableCell>
 
                   <TableCell className="text-right">

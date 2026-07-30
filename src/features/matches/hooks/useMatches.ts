@@ -205,7 +205,13 @@ export const usePlayerStats = (userId: string | undefined) => {
 
       const { data, error } = await supabase
         .from("matches")
-        .select("id, status, winner_id, scheduled_time, player1_id, player2_id, player1:player1_id(display_name), player2:player2_id(display_name), tournament:tournament_id(name)")
+        .select(`
+          id, status, winner_id, scheduled_time, player1_id, player2_id, 
+          player1:player1_id(display_name), 
+          player2:player2_id(display_name), 
+          tournament:tournament_id(name),
+          rating_history(player_id, elo_change)
+        `)
         .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
         .in("status", ["verified", "completed"])
         .order("scheduled_time", { ascending: false });

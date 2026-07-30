@@ -8,7 +8,7 @@ export const useRegistrations = (tournamentId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("registrations")
-        .select("*, user:user_id(display_name, player_id, game_id)")
+        .select("*, user:user_id(display_name, player_id, game_id, email, phone_number)")
         .eq("tournament_id", tournamentId)
         .order("created_at", { ascending: false });
 

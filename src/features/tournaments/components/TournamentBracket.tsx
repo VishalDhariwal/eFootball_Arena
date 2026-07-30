@@ -319,7 +319,7 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
                 : "TBD"}
             </span>
             {match.deadline && (
-               <span className="text-[8px] text-primary/80 lowercase tracking-normal">dl: {new Intl.DateTimeFormat('default', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(match.deadline))}</span>
+               <span className="text-[9px] text-muted-foreground/80 lowercase tracking-normal font-medium mt-0.5">dl: {new Intl.DateTimeFormat('default', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(match.deadline))}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -358,92 +358,50 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
     );
   };
 
-  const renderSideRounds = (direction: 'left' | 'right') => {
-    return sideRounds.map((round, roundIndex) => {
-      const isInnerMostSideRound = roundIndex === sideRounds.length - 1;
-      const baseSlotHeight = 140;
-      const slotHeight = baseSlotHeight * Math.pow(2, roundIndex);
-
-      const halfCount = Math.ceil(round.matches.length / 2);
-      const roundMatches = direction === 'left'
-        ? round.matches.slice(0, halfCount)
-        : round.matches.slice(halfCount);
-
-      return (
-        <div key={round.id} className={`relative flex flex-col w-[260px] ${direction === 'left' ? 'mr-12' : 'ml-12'}`}>
-          <h3 className="text-sm uppercase tracking-wider font-bold text-center text-muted-foreground mb-6 h-6">
-            {round.name}
-          </h3>
-          <div className="flex flex-col relative">
-            {roundMatches.map((match: any, matchIndex: number) => {
-              const isTopMatchInPair = matchIndex % 2 === 0;
-              return (
-                <div key={match.id} className="relative flex items-center justify-center" style={{ height: `${slotHeight}px` }}>
-                  {/* Line extending from previous round (Outer to Inner) */}
-                  {roundIndex > 0 && (
-                    <div className={`absolute ${direction === 'left' ? 'left-[-24px]' : 'right-[-24px]'} w-[24px] h-[2px] bg-border top-1/2 -translate-y-1/2`}></div>
-                  )}
-
-                  {/* Lines branching to next round (Inner to Center) */}
-                  {/* Horizontal line */}
-                  <div className={`absolute ${direction === 'left' ? 'right-[-24px]' : 'left-[-24px]'} w-[24px] h-[2px] bg-border top-1/2 -translate-y-1/2 z-0`}></div>
-
-                  {/* Vertical connecting line for pairs */}
-                  <div
-                    className={`absolute ${direction === 'left' ? 'right-[-24px]' : 'left-[-24px]'} w-[2px] bg-border z-0 ${isTopMatchInPair
-                        ? 'top-1/2 h-[50%]'
-                        : 'bottom-1/2 h-[50%]'
-                      }`}
-                  ></div>
-
-                  {renderMatchCard(match)}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    });
-  };
-
   return (
     <div className="relative overflow-x-auto pb-12 pt-4 hide-scrollbar">
-      <div className="flex justify-center items-start min-w-max px-4 mx-auto">
-        {/* LEFT SIDE */}
-        {sideRounds.length > 0 && (
-          <div className="flex">
-            {renderSideRounds('left')}
-          </div>
-        )}
+      <div className="flex justify-start items-start min-w-max px-4 mx-auto">
+        {sortedRounds.map((round, roundIndex) => {
+          const isFinalRound = roundIndex === sortedRounds.length - 1;
+          const baseSlotHeight = 140;
+          const slotHeight = baseSlotHeight * Math.pow(2, roundIndex);
 
-        {/* MIDDLE (FINAL) */}
-        {finalRound && (
-          <div className="flex flex-col justify-center relative px-8">
-            <h3 className="text-sm uppercase tracking-wider font-bold text-center text-secondary mb-6 h-6">
-              {finalRound.name}
-            </h3>
-            <div
-              className="relative flex items-center justify-center"
-              style={{ height: `${140 * Math.pow(2, sideRounds.length)}px` }}
-            >
-              {/* Connectors from left and right sides into the final */}
-              {sideRounds.length > 0 && (
-                <>
-                  <div className="absolute left-[-32px] w-[32px] h-[2px] bg-border top-1/2 -translate-y-1/2"></div>
-                  <div className="absolute right-[-32px] w-[32px] h-[2px] bg-border top-1/2 -translate-y-1/2"></div>
-                </>
-              )}
-              {finalRound.matches.map((match: any) => renderMatchCard(match))}
+          return (
+            <div key={round.id} className="relative flex flex-col w-[260px] mr-12">
+              <h3 className={`text-sm uppercase tracking-wider font-bold text-center mb-6 h-6 ${isFinalRound ? 'text-secondary' : 'text-muted-foreground'}`}>
+                {round.name}
+              </h3>
+              <div className="flex flex-col relative">
+                {round.matches.map((match: any, matchIndex: number) => {
+                  const isTopMatchInPair = matchIndex % 2 === 0;
+                  return (
+                    <div key={match.id} className="relative flex items-center justify-center" style={{ height: `${slotHeight}px` }}>
+                      {/* Line coming from previous round */}
+                      {roundIndex > 0 && (
+                        <div className="absolute left-[-24px] w-[24px] h-[2px] bg-border top-1/2 -translate-y-1/2"></div>
+                      )}
+
+                      {/* Lines branching to next round (only if not the final round) */}
+                      {!isFinalRound && (
+                        <>
+                          <div className="absolute right-[-24px] w-[24px] h-[2px] bg-border top-1/2 -translate-y-1/2 z-0"></div>
+                          <div
+                            className={`absolute right-[-24px] w-[2px] bg-border z-0 ${isTopMatchInPair
+                                ? 'top-1/2 h-[50%]'
+                                : 'bottom-1/2 h-[50%]'
+                              }`}
+                          ></div>
+                        </>
+                      )}
+
+                      {renderMatchCard(match)}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* RIGHT SIDE */}
-        {sideRounds.length > 0 && (
-          <div className="flex flex-row-reverse">
-            {renderSideRounds('right')}
-          </div>
-        )}
+          );
+        })}
       </div>
 
       <Dialog open={!!selectedMatch} onOpenChange={(open) => !open && setSelectedMatch(null)}>
