@@ -53,12 +53,12 @@ export const useLeaderboard = () => {
 
       if (error) throw error;
       if (!profiles || profiles.length === 0) return [];
-      
+
       const { data: matches } = await supabase
         .from("matches")
         .select("player1_id, player2_id, winner_id")
         .in("status", ["verified", "completed"]);
-        
+
       const { data: archives } = await supabase
         .from("season_archives")
         .select("player_id, season_name")
@@ -67,7 +67,7 @@ export const useLeaderboard = () => {
       const leaderboard = profiles.map(p => {
         const pMatches = matches?.filter(m => m.player1_id === p.id || m.player2_id === p.id) || [];
         const wins = pMatches.filter(m => m.winner_id === p.id).length;
-        
+
         return {
           player_id: p.id,
           display_name: p.display_name,
@@ -80,9 +80,9 @@ export const useLeaderboard = () => {
           avatar_id: p.avatar_id
         };
       })
-      .filter(p => p.total_matches >= 1) // Must have played at least 1 match
-      .sort((a, b) => b.arena_rating - a.arena_rating)
-      .slice(0, 100);
+        .filter(p => p.total_matches >= 1) // Must have played at least 1 match
+        .sort((a, b) => b.arena_rating - a.arena_rating)
+        .slice(0, 100);
 
       return leaderboard;
     },
@@ -94,7 +94,7 @@ export const useUserAchievements = (userId: string | undefined) => {
     queryKey: ["achievements", userId],
     queryFn: async () => {
       if (!userId) return [];
-      
+
       const { data, error } = await supabase
         .from("user_achievements")
         .select("*, achievement:achievement_id(*)")

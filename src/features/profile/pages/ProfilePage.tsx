@@ -132,6 +132,23 @@ export const ProfilePage = () => {
                   <p className="text-xs text-muted-foreground">Loading avatars...</p>
                 ) : avatars && avatars.length > 0 ? (
                   <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAvatarId(null)}
+                      title="Remove Avatar"
+                      className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all duration-150 flex items-center justify-center bg-muted focus:outline-none ${
+                        selectedAvatarId === null
+                          ? 'border-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.2)]'
+                          : 'border-border hover:border-muted-foreground'
+                      }`}
+                    >
+                      <User className="w-5 h-5 text-muted-foreground" />
+                      {selectedAvatarId === null && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </button>
                     {avatars.map(avatar => {
                       const isSelected = selectedAvatarId === avatar.id;
                       return (

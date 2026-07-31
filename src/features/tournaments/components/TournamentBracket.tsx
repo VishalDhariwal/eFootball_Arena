@@ -274,8 +274,8 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
       const advancer = match.player1?.display_name || match.player2?.display_name || "TBD";
       return (
         <div className="w-[240px] flex items-center justify-center relative z-10 h-[72px]">
-          <div className="w-full h-[2px] bg-border absolute"></div>
-          <div className="bg-card/50 border border-border/50 px-4 py-1.5 rounded-full text-xs text-muted-foreground relative z-10 shadow-sm flex items-center gap-2">
+          <div className="w-full h-[2px] bg-primary/40 absolute"></div>
+          <div className="bg-card/50 border border-primary/30 px-4 py-1.5 rounded-full text-xs text-muted-foreground relative z-10 shadow-sm flex items-center gap-2">
             <span className="font-bold text-foreground">{advancer}</span>
             <span className="opacity-70">Advanced (Bye)</span>
           </div>
@@ -286,11 +286,11 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
     return (
       <Card
         onClick={() => handleMatchClick(match)}
-        className={`relative z-10 w-[240px] bg-card border-border shadow-sm overflow-hidden 
+        className={`relative z-10 w-[240px] bg-card border-primary/20 shadow-sm overflow-hidden 
           ${isClickable ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''}`}
       >
         <div className="flex flex-col text-sm">
-          <div className={`flex justify-between items-center px-3 py-2 border-b border-border/50 ${match.winner_id === match.player1_id ? 'bg-primary/10' : ''}`}>
+          <div className={`flex justify-between items-center px-3 py-2 border-b border-primary/20 ${match.winner_id === match.player1_id ? 'bg-primary/10' : ''}`}>
             <div className="flex items-center gap-2 overflow-hidden">
               <div className={`w-1.5 h-6 rounded-full ${match.winner_id === match.player1_id ? 'bg-primary' : 'bg-muted'}`}></div>
               <span className={`truncate font-medium ${match.winner_id === match.player1_id ? 'text-primary' : 'text-foreground'}`}>
@@ -378,15 +378,15 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
                     <div key={match.id} className="relative flex items-center justify-center" style={{ height: `${slotHeight}px` }}>
                       {/* Line coming from previous round */}
                       {roundIndex > 0 && (
-                        <div className="absolute left-[-24px] w-[24px] h-[2px] bg-border top-1/2 -translate-y-1/2"></div>
+                        <div className="absolute left-[-24px] w-[24px] h-[2px] bg-primary/40 top-1/2 -translate-y-1/2"></div>
                       )}
 
                       {/* Lines branching to next round (only if not the final round) */}
                       {!isFinalRound && (
                         <>
-                          <div className="absolute right-[-24px] w-[24px] h-[2px] bg-border top-1/2 -translate-y-1/2 z-0"></div>
+                          <div className="absolute right-[-24px] w-[24px] h-[2px] bg-primary/40 top-1/2 -translate-y-1/2 z-0"></div>
                           <div
-                            className={`absolute right-[-24px] w-[2px] bg-border z-0 ${isTopMatchInPair
+                            className={`absolute right-[-24px] w-[2px] bg-primary/40 z-0 ${isTopMatchInPair
                                 ? 'top-1/2 h-[50%]'
                                 : 'bottom-1/2 h-[50%]'
                               }`}

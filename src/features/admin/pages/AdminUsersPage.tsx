@@ -72,7 +72,7 @@ const AdminUsersPage = () => {
 
   const filtered = users?.filter(u => {
     const matchFilter = filter === 'all' || u.status === filter;
-    const matchSearch = !search || 
+    const matchSearch = !search ||
       u.display_name?.toLowerCase().includes(search.toLowerCase()) ||
       u.player_id?.toLowerCase().includes(search.toLowerCase()) ||
       u.game_id?.toLowerCase().includes(search.toLowerCase());
@@ -260,7 +260,7 @@ const AdminUsersPage = () => {
                     <p className="font-medium">{selectedUser.email || '—'}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
                   <Phone className="w-5 h-5 text-muted-foreground" />
                   <div>

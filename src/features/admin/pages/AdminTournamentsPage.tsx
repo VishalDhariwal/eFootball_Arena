@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -40,6 +41,14 @@ const AdminTournamentsPage = () => {
     completed: tournaments?.filter(t => t.status === 'completed').length || 0,
   };
 
+  const [filter, setFilter] = useState<'active' | 'completed'>('active');
+
+  const filteredTournaments = tournaments?.filter(t => {
+    if (filter === 'active') return t.status !== 'completed';
+    if (filter === 'completed') return t.status === 'completed';
+    return true;
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -81,10 +90,28 @@ const AdminTournamentsPage = () => {
 
         {/* Tournaments table */}
         <Card className="overflow-hidden bg-card border-border shadow-elevated">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-primary" /> All Platform Tournaments
             </CardTitle>
+            <div className="flex gap-2 bg-muted/50 p-1 rounded-lg border border-border">
+              <Button 
+                variant={filter === 'active' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setFilter('active')}
+                className={filter === 'active' ? 'shadow-sm' : ''}
+              >
+                Active
+              </Button>
+              <Button 
+                variant={filter === 'completed' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setFilter('completed')}
+                className={filter === 'completed' ? 'shadow-sm' : ''}
+              >
+                Completed
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
@@ -103,7 +130,7 @@ const AdminTournamentsPage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tournaments?.map((t) => {
+                    {filteredTournaments?.map((t) => {
                       const sc = statusConfig[t.status] || { label: t.status, color: 'bg-muted text-muted-foreground' };
                       return (
                         <TableRow key={t.id}>

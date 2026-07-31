@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -11,6 +12,13 @@ export const OrganizerDashboardPage = () => {
   const { user } = useAuth();
   const { data: tournaments, isLoading } = useTournamentsByOrganizer(user?.id);
   const { data: analytics, isLoading: isAnalyticsLoading } = useOrganizerAnalytics(user?.id);
+  const [filter, setFilter] = useState<'active' | 'completed'>('active');
+
+  const filteredTournaments = tournaments?.filter(t => {
+    if (filter === 'active') return t.status !== 'completed';
+    if (filter === 'completed') return t.status === 'completed';
+    return true;
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -51,7 +59,27 @@ export const OrganizerDashboardPage = () => {
         </Card>
       </div>
 
-      <h2 className="text-2xl font-display font-bold mb-4">Your Tournaments</h2>
+      <div className="flex justify-between items-center mb-4 mt-8">
+        <h2 className="text-2xl font-display font-bold">Your Tournaments</h2>
+        <div className="flex gap-2 bg-muted/50 p-1 rounded-lg border border-border">
+          <Button 
+            variant={filter === 'active' ? 'default' : 'ghost'} 
+            size="sm" 
+            onClick={() => setFilter('active')}
+            className={filter === 'active' ? 'shadow-sm' : ''}
+          >
+            Active
+          </Button>
+          <Button 
+            variant={filter === 'completed' ? 'default' : 'ghost'} 
+            size="sm" 
+            onClick={() => setFilter('completed')}
+            className={filter === 'completed' ? 'shadow-sm' : ''}
+          >
+            Completed
+          </Button>
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Loading tournaments...</div>
@@ -66,7 +94,7 @@ export const OrganizerDashboardPage = () => {
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tournaments?.map((tournament) => {
+          {filteredTournaments?.map((tournament) => {
             const hasDisputes = analytics?.actionRequiredTournaments.includes(tournament.id);
             
             return (

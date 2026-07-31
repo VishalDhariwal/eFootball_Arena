@@ -8,7 +8,7 @@ export const useTournaments = () => {
       const { data, error } = await supabase
         .from("tournaments")
         .select("*, registrations(count)")
-        .neq("status", "completed")
+        .in("status", ["upcoming", "registration"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;
