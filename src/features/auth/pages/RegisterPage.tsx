@@ -76,7 +76,7 @@ const RegisterPage = () => {
                 <Swords className="w-5 h-5 text-primary" />
               </div>
               <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
-              <p className="text-sm text-muted-foreground mt-1">Request access to compete</p>
+              <p className="text-sm text-muted-foreground mt-1">Sign up to compete</p>
             </div>
 
             <div className="bg-card border border-border rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.4),0_4px_16px_rgba(0,0,0,0.2)]">
@@ -173,7 +173,7 @@ const RegisterPage = () => {
                   ) : (
                     <span className="flex items-center gap-2">
                       <UserPlus className="w-4 h-4" />
-                      Request Access
+                      Sign Up
                     </span>
                   )}
                 </Button>
@@ -208,7 +208,7 @@ const RegisterPage = () => {
 
               <h1 className="text-xl font-bold mb-1">Request Submitted</h1>
               <p className="text-sm text-muted-foreground mb-6">
-                <span className="text-foreground font-medium">{playerName}</span>, your account is pending admin approval.
+                <span className="text-foreground font-medium">{playerName}</span>, please verify your email address to log in.
               </p>
 
               <div className="bg-background border border-border rounded-xl p-4 mb-6 text-left space-y-3">
@@ -218,15 +218,7 @@ const RegisterPage = () => {
                 </div>
                 <div className="flex items-start gap-3">
                   <Mail className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted-foreground">Verification email sent. Please check your inbox to confirm.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted-foreground">Awaiting admin approval before you can log in</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted-foreground">Typically approved within 24 hours</p>
+                  <p className="text-sm text-muted-foreground">Verification email sent. Please check your inbox to confirm before logging in.</p>
                 </div>
               </div>
 
