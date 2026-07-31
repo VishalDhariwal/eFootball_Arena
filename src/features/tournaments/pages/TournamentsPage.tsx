@@ -9,8 +9,8 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useRegistrations } from "@/features/tournaments/hooks/useRegistrations";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  live:      { label: 'Live',      className: 'bg-green-500/10 text-green-500 border border-green-500/20' },
-  upcoming:  { label: 'Upcoming',  className: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' },
+  live: { label: 'Live', className: 'bg-green-500/10 text-green-500 border border-green-500/20' },
+  upcoming: { label: 'Upcoming', className: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' },
   completed: { label: 'Completed', className: 'bg-muted text-muted-foreground border border-border' },
 };
 
@@ -20,10 +20,13 @@ const TournamentsPage = () => {
   const { user } = useAuth();
   const { data: userRegistrations } = useRegistrations(user?.id);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("all");
 
-  const filteredTournaments = tournaments?.filter(t =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTournaments = tournaments?.filter(t => {
+    const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSize = sizeFilter === "all" || t.max_players?.toString() === sizeFilter;
+    return matchesSearch && matchesSize;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -40,15 +43,30 @@ const TournamentsPage = () => {
             <h1 className="text-2xl font-bold text-foreground">Tournaments</h1>
             <p className="text-sm text-muted-foreground mt-0.5">Find and join active eFootball tournaments</p>
           </div>
-          <div className="relative w-full sm:w-60">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            <Input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 bg-card border-border text-sm"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <select
+              value={sizeFilter}
+              onChange={(e) => setSizeFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-muted-foreground"
+            >
+              <option value="all">Any Size</option>
+              <option value="2">2 Players</option>
+              <option value="4">4 Players</option>
+              <option value="8">8 Players</option>
+              <option value="16">16 Players</option>
+              <option value="32">32 Players</option>
+              {/* <option value="64">64 Players</option> */}
+            </select>
+            <div className="relative w-full sm:w-60">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 bg-card border-border text-sm"
+              />
+            </div>
           </div>
         </motion.div>
 

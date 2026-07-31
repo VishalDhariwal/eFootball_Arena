@@ -71,6 +71,28 @@ export const useCreateTournament = () => {
   });
 };
 
+export const useUpdateTournament = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & any) => {
+      const { data, error } = await supabase
+        .from("tournaments")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tournament", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
+    },
+  });
+};
+
 export const useGenerateBracket = () => {
   const queryClient = useQueryClient();
 

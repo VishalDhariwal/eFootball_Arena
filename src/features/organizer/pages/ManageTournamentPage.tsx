@@ -7,7 +7,7 @@ import {
   ArrowLeft, Check, X, Play, AlertTriangle, Users, Trophy,
   Shuffle, RotateCcw, Trash2, CheckCircle2, XCircle, Zap, RotateCcw as RevertIcon
 } from "lucide-react";
-import { useTournament, useGenerateManualBracket, useRevertTournament } from "@/features/tournaments/hooks/useTournaments";
+import { useTournament, useGenerateManualBracket, useRevertTournament, useUpdateTournament } from "@/features/tournaments/hooks/useTournaments";
 import { useRegistrations, useUpdateRegistrationStatus } from "@/features/tournaments/hooks/useRegistrations";
 import { useDisputedMatches, useResolveDispute } from "@/features/matches/hooks/useMatches";
 import { toast } from "sonner";
@@ -15,7 +15,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { TournamentBracket } from "@/features/tournaments/components/TournamentBracket";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Mail, Phone, Gamepad2, Hash } from "lucide-react";
+import { Mail, Phone, Gamepad2, Hash, Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // ─── Bracket Utilities ────────────────────────────────────────────────────────
 const BYE_ID = "__BYE__";
@@ -188,6 +190,7 @@ export const ManageTournamentPage = () => {
   const generateManualBracket = useGenerateManualBracket();
   const resolveDispute = useResolveDispute();
   const revertTournament = useRevertTournament();
+  const updateTournament = useUpdateTournament();
   const { isAdmin } = useAuth();
 
   const approvedCount = registrations?.filter(r => r.registration_status === 'approved').length || 0;
@@ -197,6 +200,42 @@ export const ManageTournamentPage = () => {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [defaultFixtures, setDefaultFixtures] = useState<Fixture[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    description: "",
+    max_players: 8,
+    start_date: "",
+  });
+
+  const handleOpenEdit = () => {
+    if (tournament) {
+      setEditFormData({
+        name: tournament.name || "",
+        description: tournament.description || "",
+        max_players: tournament.max_players || 8,
+        start_date: tournament.start_date ? new Date(tournament.start_date).toISOString().slice(0, 16) : "",
+      });
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    updateTournament.mutate({
+      id: id!,
+      name: editFormData.name,
+      description: editFormData.description,
+      max_players: editFormData.max_players,
+      start_date: editFormData.start_date ? new Date(editFormData.start_date).toISOString() : null,
+    }, {
+      onSuccess: () => {
+        toast.success("Tournament details updated!");
+        setIsEditDialogOpen(false);
+      },
+      onError: (err: any) => toast.error("Failed to update: " + err.message)
+    });
+  };
 
   // Compute derived values
   const approvedPlayers = useMemo((): PlayerSlot[] =>
@@ -394,6 +433,10 @@ export const ManageTournamentPage = () => {
                 {revertTournament.isPending ? "Reverting..." : "Revert Tournament Kickoff"}
               </Button>
             )}
+            <Button variant="outline" className="w-full bg-card hover:bg-muted" onClick={handleOpenEdit}>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit Details
+            </Button>
           </div>
         </div>
 
@@ -720,6 +763,63 @@ export const ManageTournamentPage = () => {
           )}
           <DialogFooter>
             <Button onClick={() => setSelectedUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Tournament Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md bg-card border border-border">
+          <DialogHeader>
+            <DialogTitle>Edit Tournament Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input 
+                value={editFormData.name}
+                onChange={e => setEditFormData({...editFormData, name: e.target.value})}
+                className="bg-background border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <textarea 
+                className="w-full min-h-[100px] bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-white"
+                value={editFormData.description}
+                onChange={e => setEditFormData({...editFormData, description: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Max Players (Team Size)</Label>
+              <select 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-white"
+                value={editFormData.max_players}
+                onChange={e => setEditFormData({...editFormData, max_players: parseInt(e.target.value)})}
+              >
+                <option value={2}>2 Players</option>
+                <option value={4}>4 Players</option>
+                <option value={8}>8 Players</option>
+                <option value={16}>16 Players</option>
+                <option value={32}>32 Players</option>
+                <option value={64}>64 Players</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Schedule Date</Label>
+              <Input 
+                type="datetime-local"
+                value={editFormData.start_date}
+                onChange={e => setEditFormData({...editFormData, start_date: e.target.value})}
+                className="bg-background border-border"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveEdit} disabled={updateTournament.isPending}>
+              {updateTournament.isPending ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

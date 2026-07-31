@@ -43,7 +43,7 @@ const RegisterPage = () => {
         options: {
           data: {
             full_name: formData.fullName,
-            phone: `${formData.countryCode} ${formData.phone}`,
+            phone: formData.phone ? `${formData.countryCode} ${formData.phone}` : null,
           },
         },
       });
@@ -110,7 +110,10 @@ const RegisterPage = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-sm font-medium flex items-center justify-between">
+                    <span>Phone Number</span>
+                    <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+                  </Label>
                   <div className="flex gap-2">
                     <select
                       className="h-10 w-28 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
@@ -129,7 +132,6 @@ const RegisterPage = () => {
                       placeholder="99999 00000"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/[^0-9]/g, '') })}
-                      required
                       disabled={isLoading}
                       className="flex-1 h-10 bg-background border-border"
                     />
