@@ -114,7 +114,7 @@ export const OrganizerDashboardPage = () => {
                     <div className="space-y-2 mb-4 text-sm text-muted-foreground">
                       <p>Status: <span className="text-foreground capitalize">{tournament.status}</span></p>
                       <p>Format: <span className="text-foreground capitalize">{tournament.format.replace('_', ' ')}</span></p>
-                      <p>Players: <span className="text-foreground">{tournament.registrations?.[0]?.count || 0} / {tournament.max_players || '∞'}</span></p>
+                      <p>Players: <span className="text-foreground">{tournament.registrations?.filter((r: any) => r.registration_status !== 'rejected').length || 0} / {tournament.max_players || '∞'}</span></p>
                     </div>
                     <div className="flex gap-2">
                       <Button 

@@ -174,7 +174,7 @@ export const TournamentDetailPage = () => {
   const setActiveTab = (tab: Tab) => setSearchParams({ tab });
 
   const approvedCount = allRegistrations?.filter(r => r.registration_status === 'approved').length || 0;
-  const totalRequestedCount = allRegistrations?.length || 0;
+  const totalRequestedCount = allRegistrations?.filter(r => r.registration_status !== 'rejected').length || 0;
   const canManage = user?.id === tournament?.organizer_id || isAdmin;
   const regStatus = registration?.registration_status;
   const isApprovedPlayer = regStatus === 'approved';
@@ -323,9 +323,9 @@ export const TournamentDetailPage = () => {
                       <Settings className="w-3.5 h-3.5 mr-1.5" /> Manage
                     </Button>
                   )}
-                  {!canManage && !registration && user && !isFinished && tournament.status !== 'live' && (
+                  {!canManage && (!registration || regStatus === 'rejected') && user && !isFinished && tournament.status !== 'live' && (
                     <Button size="sm" className="h-8 text-xs" onClick={handleRegister} disabled={registerMutation.isPending}>
-                      {registerMutation.isPending ? "Sending..." : "Request to Join"}
+                      {registerMutation.isPending ? "Sending..." : (regStatus === 'rejected' ? "Request Again" : "Request to Join")}
                     </Button>
                   )}
                   {!user && !isFinished && (
@@ -484,7 +484,10 @@ export const TournamentDetailPage = () => {
                             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                               <XCircle className="w-6 h-6 text-red-400 mx-auto mb-1" />
                               <p className="font-bold text-red-400 text-sm">Request Rejected</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">Contact the organizer.</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 mb-3">Contact the organizer.</p>
+                              <Button size="sm" variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/20" onClick={handleRegister} disabled={registerMutation.isPending}>
+                                {registerMutation.isPending ? "Sending..." : "Request Again"}
+                              </Button>
                             </div>
                           )}
                         </div>

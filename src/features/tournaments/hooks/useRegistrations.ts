@@ -47,12 +47,12 @@ export const useRegisterForTournament = () => {
     mutationFn: async ({ tournamentId, userId }: { tournamentId: string; userId: string }) => {
       const { data, error } = await supabase
         .from("registrations")
-        .insert({
+        .upsert({
           tournament_id: tournamentId,
           user_id: userId,
           registration_status: 'pending',
           payment_status: 'pending',
-        })
+        }, { onConflict: 'tournament_id,user_id' })
         .select()
         .single();
 

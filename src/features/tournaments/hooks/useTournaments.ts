@@ -7,7 +7,7 @@ export const useTournaments = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("*, registrations(count)")
+        .select("*, registrations(registration_status)")
         .in("status", ["upcoming", "registration"])
         .order("created_at", { ascending: false });
 
@@ -23,7 +23,7 @@ export const useTournamentsByOrganizer = (organizerId: string | undefined) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("*, registrations(count)")
+        .select("*, registrations(registration_status)")
         .eq("organizer_id", organizerId)
         .order("created_at", { ascending: false });
 
