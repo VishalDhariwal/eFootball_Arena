@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Users, Zap, Shield, Target, Award } from "lucide-react";
+import { Trophy, Users, Zap, Shield, Target, Award, Globe, Coins, CalendarDays, Activity, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase";
@@ -60,18 +60,28 @@ const Index = () => {
     },
   ];
 
+  const infoCards = [
+    { icon: CalendarDays, text: "Coming Soon: Official League Matches", color: "text-blue-400" },
+    { icon: Activity, text: "Dynamic Real-Time Elo Rating System", color: "text-green-400" },
+    { icon: ShieldCheck, text: "Strict Anti-Cheat & Proof Verification", color: "text-purple-400" },
+    { icon: Coins, text: "Monthly Leaderboard Rewards", color: "text-yellow-400" },
+    { icon: Globe, text: "Climb the Global Player Leaderboards", color: "text-cyan-400" },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-hero">
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-8">
-        <nav className="flex justify-between items-center mb-16">
+      <div className="container mx-auto px-4 py-6">
+        <nav className="flex justify-between items-center mb-8">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-2"
           >
-            <Trophy className="w-8 h-8 text-primary" />
-            <span className="text-2xl font-display font-bold">eFootball Arena</span>
+            <span className="text-2xl font-display font-bold tracking-tight leading-none flex flex-col">
+              <span>eFootball</span>
+              <span className="text-primary">Arena</span>
+            </span>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -87,16 +97,31 @@ const Index = () => {
           </motion.div>
         </nav>
 
-        <div className="text-center max-w-5xl mx-auto mb-20">
+        {/* Scrolling Info Cards Marquee - MOVED BELOW NAVBAR */}
+        <div className="relative w-full overflow-hidden mb-12 py-4">
+          <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
+          
+          <div className="flex w-max animate-marquee gap-6">
+            {[...infoCards, ...infoCards, ...infoCards, ...infoCards].map((card, i) => (
+              <Card key={i} className="flex-shrink-0 flex items-center gap-3 py-3 px-6 bg-card/60 backdrop-blur-sm border-border rounded-full shadow-sm hover:border-primary/50 transition-all cursor-default">
+                <card.icon className={`w-5 h-5 ${card.color}`} />
+                <span className="text-sm font-medium whitespace-nowrap text-foreground">{card.text}</span>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div className="text-center max-w-5xl mx-auto mb-16">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-6xl md:text-8xl font-display font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent">
+            <h1 className="text-5xl md:text-8xl font-display font-bold mb-6 text-foreground">
               Compete in Elite Tournaments
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            <p className="text-lg md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               Join the ultimate eFootball Mobile competitive platform. Secure match reporting,
               live fixtures, and anti-cheat protection.
             </p>
@@ -153,7 +178,7 @@ const Index = () => {
               <div className="text-muted-foreground">Active Players</div>
             </div>
             <div>
-              <div className="text-5xl font-display font-bold text-secondary mb-2">
+              <div className="text-5xl font-display font-bold text-primary mb-2">
                 {stats ? stats.tournaments.toLocaleString() : "..."}
               </div>
               <div className="text-muted-foreground">Live Tournaments</div>

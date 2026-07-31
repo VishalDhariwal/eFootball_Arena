@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Clock, CheckCircle2, Shield, Swords } from "lucide-react";
+import { UserPlus, Clock, CheckCircle2, Shield, Swords, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/services/supabase";
@@ -217,7 +217,11 @@ const RegisterPage = () => {
                   <p className="text-sm text-muted-foreground">Account created successfully</p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                  <Mail className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Verification email sent. Please check your inbox to confirm.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
                   <p className="text-sm text-muted-foreground">Awaiting admin approval before you can log in</p>
                 </div>
                 <div className="flex items-start gap-3">

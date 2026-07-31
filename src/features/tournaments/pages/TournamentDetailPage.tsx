@@ -174,6 +174,7 @@ export const TournamentDetailPage = () => {
   const setActiveTab = (tab: Tab) => setSearchParams({ tab });
 
   const approvedCount = allRegistrations?.filter(r => r.registration_status === 'approved').length || 0;
+  const totalRequestedCount = allRegistrations?.length || 0;
   const canManage = user?.id === tournament?.organizer_id || isAdmin;
   const regStatus = registration?.registration_status;
   const isApprovedPlayer = regStatus === 'approved';
@@ -304,7 +305,7 @@ export const TournamentDetailPage = () => {
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" />
-                      <span className="text-green-500 font-medium">{approvedCount}</span>
+                      <span className="text-green-500 font-medium">{totalRequestedCount}</span>
                       <span>/ {tournament.max_players || '∞'} players</span>
                     </span>
                     {tournament.start_date && (
@@ -443,7 +444,7 @@ export const TournamentDetailPage = () => {
                         <div className="flex justify-between text-muted-foreground">
                           <span>Players</span>
                           <span className="text-white font-medium">
-                            <span className="text-green-400">{approvedCount}</span> / {tournament.max_players || '∞'}
+                            <span className="text-green-400">{totalRequestedCount}</span> / {tournament.max_players || '∞'}
                           </span>
                         </div>
 
