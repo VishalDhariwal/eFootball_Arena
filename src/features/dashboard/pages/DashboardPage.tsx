@@ -76,6 +76,12 @@ const Dashboard = () => {
                   <span className={`text-xs font-semibold ${rank.color}`}>{rank.label}</span>
                   <span className="text-muted-foreground text-xs">·</span>
                   <span className="text-xs text-muted-foreground">{rating} AR</span>
+                  {(profile as any)?.player_id && (
+                    <>
+                      <span className="text-muted-foreground text-xs">·</span>
+                      <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded-md">{(profile as any).player_id}</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

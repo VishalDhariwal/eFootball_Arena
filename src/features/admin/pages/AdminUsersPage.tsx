@@ -175,8 +175,11 @@ const AdminUsersPage = () => {
                       {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
-                  <div className="col-span-4 text-sm text-muted-foreground truncate">
-                    {user.email || '—'}
+                  <div className="col-span-4 flex items-center gap-2 text-sm text-muted-foreground truncate min-w-0">
+                    <span className="truncate">{user.email || '—'}</span>
+                    {user.player_id && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-md bg-muted font-mono shrink-0">{user.player_id}</span>
+                    )}
                   </div>
                   <div className="col-span-2 flex justify-center">
                     <span className={`text-xs px-2.5 py-1 rounded-full border font-medium capitalize ${statusColors[user.status as ProfileStatus] || statusColors.pending}`}>
