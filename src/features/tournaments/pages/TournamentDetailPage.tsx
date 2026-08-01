@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Trophy, ArrowLeft, Users, User, CheckCircle, Clock, XCircle, Settings,
   Swords, LayoutGrid, ChevronRight, Target, Calendar,
-  Shield, FileText, Flag, Star, Medal
+  Shield, FileText, Flag, Star, Medal, IndianRupee, Eye
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useTournament, useFinishTournament } from "@/features/tournaments/hooks/useTournaments";
@@ -448,6 +448,44 @@ export const TournamentDetailPage = () => {
                           </span>
                         </div>
 
+                        {/* Entry Fee */}
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Entry Fee</span>
+                          {tournament.entry_fee != null && Number(tournament.entry_fee) > 0 ? (
+                            <span className="flex items-center gap-0.5 font-semibold text-primary">
+                              <IndianRupee className="w-3 h-3" />
+                              {Number(tournament.entry_fee).toLocaleString('en-IN')}
+                            </span>
+                          ) : (
+                            <span className="font-semibold text-green-400">Free</span>
+                          )}
+                        </div>
+
+                        {/* 1st Prize */}
+                        {tournament.prize_first != null && Number(tournament.prize_first) > 0 && (
+                          <div className="flex justify-between text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Medal className="w-3 h-3 text-yellow-400" /> 1st Prize
+                            </span>
+                            <span className="flex items-center gap-0.5 font-semibold text-yellow-400">
+                              <IndianRupee className="w-3 h-3" />
+                              {Number(tournament.prize_first).toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* 2nd Prize */}
+                        {tournament.prize_second != null && Number(tournament.prize_second) > 0 && (
+                          <div className="flex justify-between text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Medal className="w-3 h-3 text-slate-400" /> 2nd Prize
+                            </span>
+                            <span className="flex items-center gap-0.5 font-semibold text-slate-300">
+                              <IndianRupee className="w-3 h-3" />
+                              {Number(tournament.prize_second).toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Registration CTA */}
@@ -556,9 +594,14 @@ export const TournamentDetailPage = () => {
                             <div className="shrink-0">
                               {canSubmit ? (
                                 match.match_submissions?.some((sub: any) => sub.player_id === user?.id) ? (
-                                  <Button size="sm" variant="outline" disabled className="text-muted-foreground border-border/50">
-                                    <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
-                                    Submitted
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-muted-foreground border-border/50 hover:border-primary/40 hover:text-foreground"
+                                    onClick={() => navigate(`/matches/${match.id}/submit`)}
+                                  >
+                                    <Eye className="w-3.5 h-3.5 mr-1.5" />
+                                    {(match as any).match_submissions?.length > 1 ? "View / Object" : "View Submission"}
                                   </Button>
                                 ) : (
                                   <Button size="sm" onClick={() => navigate(`/matches/${match.id}/submit`)}>

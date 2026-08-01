@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trophy, Users, Search, ChevronRight } from "lucide-react";
+import { Trophy, Users, Search, ChevronRight, IndianRupee } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTournaments } from "@/features/tournaments/hooks/useTournaments";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -104,11 +104,21 @@ const TournamentsPage = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{tournament.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <Users className="w-3 h-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">
                             {playerCount} / {tournament.max_players || '∞'} players
                           </span>
+                          {tournament.entry_fee != null && Number(tournament.entry_fee) > 0 ? (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                              <IndianRupee className="w-2.5 h-2.5" />
+                              {Number(tournament.entry_fee).toLocaleString('en-IN')}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20">
+                              Free
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

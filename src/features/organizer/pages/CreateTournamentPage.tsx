@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Trophy, Calendar, Users, Award } from "lucide-react";
+import { ArrowLeft, Trophy, Calendar, Users, IndianRupee, Medal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -18,9 +18,11 @@ const tournamentSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().optional(),
   format: z.string().min(1, "Format is required"),
-
   max_players: z.coerce.number().min(2, "Must have at least 2 players").optional(),
   start_date: z.string().optional(),
+  entry_fee: z.coerce.number().min(0).optional(),
+  prize_first: z.coerce.number().min(0).optional(),
+  prize_second: z.coerce.number().min(0).optional(),
 });
 
 type TournamentFormValues = z.infer<typeof tournamentSchema>;
@@ -45,7 +47,9 @@ export const CreateTournamentPage = () => {
 
     createTournament.mutate({
       ...data,
-      entry_fee: 0, // Always free
+      entry_fee: data.entry_fee ?? 0,
+      prize_first: data.prize_first ?? null,
+      prize_second: data.prize_second ?? null,
       organizer_id: user.id,
       status: 'upcoming',
     }, {
@@ -84,7 +88,7 @@ export const CreateTournamentPage = () => {
               </div>
               <div>
                 <CardTitle className="text-2xl">Create New Tournament</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">Free to participate — players request access, you approve</p>
+                <p className="text-sm text-muted-foreground mt-1">Set entry fee &amp; prizes — players request access, you approve</p>
               </div>
             </div>
           </CardHeader>
@@ -137,6 +141,72 @@ export const CreateTournamentPage = () => {
                   Start Date
                 </Label>
                 <Input id="start_date" type="datetime-local" {...register("start_date")} />
+              </div>
+
+              {/* Entry Fee & Prizes */}
+              <div className="border-t border-border pt-5">
+                <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+                  <IndianRupee className="w-3.5 h-3.5 text-primary" />
+                  Entry Fee &amp; Prizes
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="entry_fee" className="text-xs text-muted-foreground">
+                      Entry Fee (₹)
+                    </Label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <Input
+                        id="entry_fee"
+                        type="number"
+                        min="0"
+                        step="1"
+                        {...register("entry_fee")}
+                        placeholder="0 = Free"
+                        className="pl-8"
+                      />
+                    </div>
+                    {errors.entry_fee && <p className="text-xs text-destructive">{errors.entry_fee.message}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="prize_first" className="text-xs text-muted-foreground">
+                      <Medal className="inline w-3 h-3 mr-1 text-yellow-400" />
+                      1st Prize (₹) — Optional
+                    </Label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <Input
+                        id="prize_first"
+                        type="number"
+                        min="0"
+                        step="1"
+                        {...register("prize_first")}
+                        placeholder="e.g. 500"
+                        className="pl-8"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="prize_second" className="text-xs text-muted-foreground">
+                      <Medal className="inline w-3 h-3 mr-1 text-slate-400" />
+                      2nd Prize (₹) — Optional
+                    </Label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <Input
+                        id="prize_second"
+                        type="number"
+                        min="0"
+                        step="1"
+                        {...register("prize_second")}
+                        placeholder="e.g. 250"
+                        className="pl-8"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Info Banner */}

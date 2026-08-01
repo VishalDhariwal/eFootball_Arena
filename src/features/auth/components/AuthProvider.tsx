@@ -7,6 +7,7 @@ export type UserRole = 'player' | 'organizer' | 'admin' | null;
 export interface UserProfile {
   id: string;
   display_name: string;
+  username: string | null;   // set for new username-based accounts; null for old email accounts
   avatar_url: string | null;
   game_id: string | null;
   player_id: string;

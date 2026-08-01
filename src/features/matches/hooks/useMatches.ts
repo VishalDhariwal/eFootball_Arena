@@ -41,7 +41,7 @@ export const useMatch = (matchId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("matches")
-        .select("*, player1:player1_id(*), player2:player2_id(*), tournament:tournament_id(*)")
+        .select("*, player1:player1_id(*), player2:player2_id(*), tournament:tournament_id(*), match_submissions(*)")
         .eq("id", matchId)
         .single();
 
@@ -193,6 +193,27 @@ export const useResolveDispute = () => {
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["disputed_matches"] });
       queryClient.invalidateQueries({ queryKey: ["match", variables.matchId] });
+    },
+  });
+};
+
+export const useRaiseDispute = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ matchId }: { matchId: string }) => {
+      const { error } = await supabase
+        .from("matches")
+        .update({ status: 'disputed' })
+        .eq("id", matchId);
+
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["match", variables.matchId] });
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+      queryClient.invalidateQueries({ queryKey: ["player_matches"] });
     },
   });
 };
