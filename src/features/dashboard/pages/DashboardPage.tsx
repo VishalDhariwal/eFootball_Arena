@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Trophy, Target, User, Clock, Star,
-  Swords, History, Edit2, ChevronRight, Calendar
+  Swords, History, Edit2, ChevronRight, Calendar, PlusCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -114,6 +114,29 @@ const Dashboard = () => {
                 </div>
               </Card>
             ))}
+          </div>
+        </motion.div>
+
+        {/* Join Tournament CTA */}
+        <motion.div {...fade} transition={{ duration: 0.2, delay: 0.08 }}>
+          <div className={`${card} p-4 flex items-center justify-between gap-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20`}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
+                <Trophy className="w-4.5 h-4.5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Ready to compete?</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Browse open tournaments and register now</p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="shrink-0 h-8 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+              onClick={() => navigate('/tournaments')}
+            >
+              <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+              Join Tournament
+            </Button>
           </div>
         </motion.div>
 
