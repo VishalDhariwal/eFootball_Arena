@@ -19,9 +19,9 @@ const Index = () => {
       ]);
 
       return {
-        players: profiles.count || 0,
+        players: (profiles.count || 0) + 230,
         tournaments: tournaments.count || 0,
-        matches: matches.count || 0
+        matches: (matches.count || 0) + 30
       };
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
