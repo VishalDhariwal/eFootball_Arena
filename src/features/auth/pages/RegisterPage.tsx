@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/services/supabase";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
+const RESERVED_USERNAMES = ['messi', 'ronaldo', 'cr7', 'neymar', 'mbappe', 'pele', 'maradona', 'admin', 'administrator', 'system', 'support', 'root', 'moderator'];
 
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
@@ -34,6 +35,11 @@ const RegisterPage = () => {
 
     if (!USERNAME_REGEX.test(value)) {
       setUsernameStatus('invalid');
+      return;
+    }
+
+    if (RESERVED_USERNAMES.includes(value.toLowerCase())) {
+      setUsernameStatus('taken');
       return;
     }
 

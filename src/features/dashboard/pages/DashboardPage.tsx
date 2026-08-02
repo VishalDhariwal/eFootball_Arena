@@ -22,8 +22,17 @@ const Dashboard = () => {
   const { data: statsData } = usePlayerStats(user?.id);
   const { data: tournaments } = useUserTournaments(user?.id);
 
-  const upcomingMatches = matches?.filter(m => ['scheduled', 'live', 'waiting_submission', 'disputed'].includes(m.status)) || [];
+  const upcomingMatches = matches?.filter(m => 
+    ['scheduled', 'live', 'waiting_submission', 'disputed'].includes(m.status) &&
+    (m as any).tournament?.status !== 'completed'
+  ) || [];
   const recentActivity = statsData?.history?.slice(0, 10) || [];
+
+  const claimableTournaments = tournaments?.filter(t => 
+    t.tournament?.status === 'completed' &&
+    t.tournament?.winner_id === user?.id &&
+    (!t.prize_status || t.prize_status === 'none' || t.prize_status === 'requested')
+  ) || [];
 
   const activeAvatarUrl = avatars?.find(a => a.id === (profile as any)?.avatar_id)?.image_url;
 
@@ -116,6 +125,35 @@ const Dashboard = () => {
             ))}
           </div>
         </motion.div>
+
+        {/* Claim Rewards Section */}
+        {claimableTournaments.length > 0 && (
+          <motion.div {...fade} transition={{ duration: 0.2, delay: 0.07 }}>
+            {claimableTournaments.map(t => (
+              <div key={t.id} className={`${card} mb-6 p-4 flex items-center justify-between gap-4 bg-gradient-to-r from-yellow-500/10 via-amber-500/5 to-transparent border-yellow-500/20`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center shrink-0">
+                    <Trophy className="w-4.5 h-4.5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">You won {t.tournament?.name}!</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t.prize_status === 'requested' ? 'Your reward claim is being processed.' : 'Claim your well-deserved reward.'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className={`shrink-0 h-8 text-xs font-semibold shadow-sm ${t.prize_status === 'requested' ? 'bg-muted text-muted-foreground hover:bg-muted' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}`}
+                  onClick={() => navigate(`/tournaments/${t.tournament?.id}?tab=matches`)}
+                >
+                  <Trophy className="w-3.5 h-3.5 mr-1.5" />
+                  {t.prize_status === 'requested' ? 'View Status' : 'Claim Reward'}
+                </Button>
+              </div>
+            ))}
+          </motion.div>
+        )}
 
         {/* Join Tournament CTA */}
         <motion.div {...fade} transition={{ duration: 0.2, delay: 0.08 }}>

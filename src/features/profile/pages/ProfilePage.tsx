@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { User, Shield, Star, Check } from "lucide-react";
+import { User, Shield, Star, Check, CheckCircle2, XCircle, Loader2, AtSign } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,17 @@ import { useProfile, useUpdateProfile, useAvatars, useUserChampionSeasons } from
 import { useParams } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import { ChampionName } from "@/components/ui/champion-name";
+import { supabase } from "@/services/supabase";
+
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
+const RESERVED_USERNAMES = ['messi', 'ronaldo', 'cr7', 'neymar', 'mbappe', 'pele', 'maradona', 'admin', 'administrator', 'system', 'support', 'root', 'moderator'];
 
 const profileSchema = z.object({
-  displayName: z.string().min(2, "Display name must be at least 2 characters"),
+  username: z.string().regex(USERNAME_REGEX, "3–20 chars: letters, numbers, underscores only"),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
 const rankInfo = (r: number) => {
   if (r >= 1900) return { label: 'Elite', color: 'text-purple-400' };
@@ -45,25 +50,76 @@ export const ProfilePage = () => {
   const updateProfile = useUpdateProfile();
 
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ProfileFormValues>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { displayName: "" },
+    defaultValues: { username: "" },
   });
+
+  const watchUsername = watch("username");
 
   useEffect(() => {
     if (profile) {
-      reset({ displayName: profile.display_name || "" });
+      reset({ username: profile.username || profile.display_name || "" });
       if (profile.avatar_id && !selectedAvatarId) {
         setSelectedAvatarId(profile.avatar_id);
       }
     }
   }, [profile, reset]);
 
+  useEffect(() => {
+    if (isViewingOther) return;
+
+    if (!watchUsername) {
+      setUsernameStatus('idle');
+      return;
+    }
+    
+    // If it's the user's current username, it's valid and available
+    if (profile && (watchUsername === profile.username || watchUsername === profile.display_name)) {
+      setUsernameStatus('available');
+      return;
+    }
+
+    if (!USERNAME_REGEX.test(watchUsername)) {
+      setUsernameStatus('invalid');
+      return;
+    }
+
+    if (RESERVED_USERNAMES.includes(watchUsername.toLowerCase())) {
+      setUsernameStatus('taken');
+      return;
+    }
+
+    setUsernameStatus('checking');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('username', watchUsername)
+        .neq('id', user.id)
+        .maybeSingle();
+      setUsernameStatus(data ? 'taken' : 'available');
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [watchUsername, profile, user, isViewingOther]);
+
   const onSubmit = (data: ProfileFormValues) => {
     if (!user) return;
+    if (usernameStatus === 'taken' || usernameStatus === 'invalid' || usernameStatus === 'checking') {
+      toast.error("Please pick a valid and available username");
+      return;
+    }
     updateProfile.mutate(
-      { userId: user.id, updates: { display_name: data.displayName, avatar_id: selectedAvatarId } },
+      { userId: user.id, updates: { username: data.username, display_name: data.username, avatar_id: selectedAvatarId } },
       {
         onSuccess: () => toast.success("Profile saved"),
         onError: (err) => { toast.error("Failed to save profile"); console.error(err); },
@@ -159,17 +215,53 @@ export const ProfilePage = () => {
               <h2 className="text-sm font-semibold text-foreground mb-5">Edit Profile</h2>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Display Name */}
+              {/* Username */}
               <div className="space-y-1.5">
-                <Label htmlFor="displayName" className="text-sm font-medium">Display Name</Label>
-                <Input
-                  id="displayName"
-                  placeholder="Your display name"
-                  {...register("displayName")}
-                  className="h-10 bg-background border-border"
-                />
-                {errors.displayName && (
-                  <p className="text-xs text-destructive mt-1">{errors.displayName.message}</p>
+                <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+                <div className="relative">
+                  <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="username"
+                    placeholder="your_username"
+                    {...register("username")}
+                    className="h-10 bg-background border-border pl-9 pr-9"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <AnimatePresence mode="wait">
+                      {usernameStatus !== 'idle' && (
+                        <motion.div
+                          key={usernameStatus}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {usernameStatus === 'checking' && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />}
+                          {usernameStatus === 'available' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                          {usernameStatus === 'taken' && <XCircle className="w-4 h-4 text-destructive" />}
+                          {usernameStatus === 'invalid' && <XCircle className="w-4 h-4 text-orange-400" />}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+                <AnimatePresence mode="wait">
+                  {usernameStatus !== 'idle' && (
+                    <motion.div
+                      key={usernameStatus}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {usernameStatus === 'available' && <p className="text-xs text-green-500 mt-1">Username is available</p>}
+                      {usernameStatus === 'taken' && <p className="text-xs text-destructive mt-1">Username is already taken</p>}
+                      {usernameStatus === 'invalid' && <p className="text-xs text-orange-400 mt-1">3–20 chars: letters, numbers, underscores only</p>}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                {errors.username && usernameStatus === 'idle' && (
+                  <p className="text-xs text-destructive mt-1">{errors.username.message}</p>
                 )}
               </div>
 

@@ -296,6 +296,8 @@ export const useUserTournaments = (userId: string | undefined) => {
           refund_status,
           refund_requested_at,
           refund_processed_at,
+          prize_status,
+          prize_type,
           created_at,
           tournament:tournament_id(
             id, name, description, status, format, max_players, start_date, winner_id, entry_fee
