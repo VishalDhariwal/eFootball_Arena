@@ -1,12 +1,14 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Trophy, User, BarChart3, Calendar, Shield, LayoutDashboard, Menu, Bell } from "lucide-react";
+import { LogOut, Home, Trophy, User, BarChart3, Calendar, Shield, LayoutDashboard, Menu, Bell, IndianRupee, Crown, HelpCircle } from "lucide-react";
 import { supabase } from "@/services/supabase";
 import { toast } from "sonner";
 import { NotificationsPopover } from "@/features/notifications/components/NotificationsPopover";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MessageCircle } from "lucide-react";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -49,6 +51,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
     { to: '/admin', icon: LayoutDashboard, label: 'Overview' },
     { to: '/admin/users', icon: User, label: 'Users' },
     { to: '/admin/tournaments', icon: Trophy, label: 'Tournaments' },
+    { to: '/admin/finances', icon: IndianRupee, label: 'Finances' },
     { to: '/organizer', icon: Shield, label: 'Organizer' },
   ];
 
@@ -101,6 +104,38 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                       Host Tournament
                     </Link>
                   )}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors w-full text-left"
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                        Help & Support
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md w-[90vw] mx-auto rounded-xl">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl">
+                          <HelpCircle className="w-5 h-5 text-green-500" />
+                          Help & Support
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="py-6 text-center space-y-4">
+                        <p className="text-muted-foreground">
+                          Need assistance with your account, a tournament, or payments?
+                        </p>
+                        <Button asChild className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white" size="lg">
+                          <a href="https://wa.me/918930099250" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                            <MessageCircle className="w-5 h-5" />
+                            Contact Admin via WhatsApp
+                          </a>
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-4">
+                          Helpline No: 8930099250
+                        </p>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   <div className="border-t border-border mt-2 pt-2">
                     <button
                       onClick={handleLogout}
@@ -141,6 +176,40 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-1">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors" 
+                  title="Help & Support"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl">
+                    <HelpCircle className="w-5 h-5 text-green-500" />
+                    Help & Support
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="py-6 text-center space-y-4">
+                  <p className="text-muted-foreground">
+                    Need assistance with your account, a tournament, or payments?
+                  </p>
+                  <Button asChild className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white" size="lg">
+                    <a href="https://wa.me/918930099250" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                      <MessageCircle className="w-5 h-5" />
+                      Contact Admin via WhatsApp
+                    </a>
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Helpline No: 8930099250
+                  </p>
+                </div>
+              </DialogContent>
+            </Dialog>
             <NotificationsPopover />
             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
               <Link to="/profile">

@@ -88,7 +88,7 @@ const TournamentsPage = () => {
             <div className="divide-y divide-border">
               {filteredTournaments?.map((tournament, index) => {
                 const status = statusConfig[tournament.status] ?? statusConfig.completed;
-                const playerCount = tournament.registrations?.filter((r: any) => r.registration_status !== 'rejected').length || 0;
+                const playerCount = tournament.registrations?.filter((r: any) => r.registration_status !== 'rejected')?.length || 0;
                 return (
                   <motion.div
                     key={tournament.id}

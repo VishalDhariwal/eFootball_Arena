@@ -7,7 +7,13 @@ import {
   ArrowLeft, Check, X, Play, AlertTriangle, Users, Trophy,
   Shuffle, RotateCcw, Trash2, CheckCircle2, XCircle, Zap, RotateCcw as RevertIcon
 } from "lucide-react";
-import { useTournament, useGenerateManualBracket, useRevertTournament, useUpdateTournament } from "@/features/tournaments/hooks/useTournaments";
+import { 
+  useTournament, 
+  useUpdateTournament, 
+  useRevertTournament, 
+  useGenerateManualBracket,
+  useTournamentWhatsAppLink
+} from "@/features/tournaments/hooks/useTournaments";
 import { useRegistrations, useUpdateRegistrationStatus } from "@/features/tournaments/hooks/useRegistrations";
 import { useDisputedMatches, useResolveDispute } from "@/features/matches/hooks/useMatches";
 import { toast } from "sonner";
@@ -18,6 +24,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Mail, Phone, Gamepad2, Hash, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OrganizerPaymentsTab } from "@/features/organizer/components/OrganizerPaymentsTab";
 
 // ─── Bracket Utilities ────────────────────────────────────────────────────────
 const BYE_ID = "__BYE__";
@@ -183,7 +191,8 @@ export const ManageTournamentPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: tournament, isLoading: isTournamentLoading } = useTournament(id || "");
+  const { data: tournament, isLoading } = useTournament(id || "");
+  const { data: whatsappLink } = useTournamentWhatsAppLink(id || "");
   const { data: registrations, isLoading: isRegLoading } = useRegistrations(id || "");
   const { data: disputedMatches } = useDisputedMatches(id || "");
   const updateStatus = useUpdateRegistrationStatus();
@@ -193,8 +202,8 @@ export const ManageTournamentPage = () => {
   const updateTournament = useUpdateTournament();
   const { isAdmin } = useAuth();
 
-  const approvedCount = registrations?.filter(r => r.registration_status === 'approved').length || 0;
-  const pendingCount = registrations?.filter(r => r.registration_status === 'pending').length || 0;
+  const approvedCount = (registrations || []).filter(r => r.registration_status === 'approved').length;
+  const pendingCount = (registrations || []).filter(r => r.registration_status === 'pending').length;
 
   const [isManualMode, setIsManualMode] = useState(false);
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
@@ -207,6 +216,7 @@ export const ManageTournamentPage = () => {
     description: "",
     max_players: 8,
     start_date: "",
+    whatsapp_group_link: "",
   });
 
   const handleOpenEdit = () => {
@@ -216,6 +226,7 @@ export const ManageTournamentPage = () => {
         description: tournament.description || "",
         max_players: tournament.max_players || 8,
         start_date: tournament.start_date ? new Date(tournament.start_date).toISOString().slice(0, 16) : "",
+        whatsapp_group_link: whatsappLink || "",
       });
       setIsEditDialogOpen(true);
     }
@@ -228,6 +239,7 @@ export const ManageTournamentPage = () => {
       description: editFormData.description,
       max_players: editFormData.max_players,
       start_date: editFormData.start_date ? new Date(editFormData.start_date).toISOString() : null,
+      whatsapp_group_link: editFormData.whatsapp_group_link,
     }, {
       onSuccess: () => {
         toast.success("Tournament details updated!");
@@ -375,7 +387,7 @@ export const ManageTournamentPage = () => {
     }
   };
 
-  if (isTournamentLoading || isRegLoading) {
+  if (isLoading || isRegLoading) {
     return <div className="text-center py-20 text-white">Loading...</div>;
   }
   if (!tournament) {
@@ -440,7 +452,15 @@ export const ManageTournamentPage = () => {
           </div>
         </div>
 
-        {/* Kick Off Card */}
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="mb-6 bg-card border border-border">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="players">Players ({registrations?.length || 0})</TabsTrigger>
+            {isAdmin && <TabsTrigger value="payments">Payments & Refunds</TabsTrigger>}
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-8">
+            {/* Kick Off Card */}
         {tournament.status !== 'live' && tournament.status !== 'completed' && !isManualMode && (
           <Card className="bg-card border-primary/30 shadow-glow-primary">
             <CardHeader>
@@ -627,7 +647,9 @@ export const ManageTournamentPage = () => {
             </CardContent>
           </Card>
         )}
+        </TabsContent>
 
+        <TabsContent value="players" className="space-y-8">
         {/* Player Registrations Table */}
         <Card className="bg-card border-border shadow-elevated overflow-hidden">
           <CardHeader>
@@ -642,7 +664,7 @@ export const ManageTournamentPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {registrations?.length === 0 ? (
+            {!registrations || registrations.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No players have registered yet.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -706,6 +728,14 @@ export const ManageTournamentPage = () => {
             )}
           </CardContent>
         </Card>
+        </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="payments">
+            <OrganizerPaymentsTab tournamentId={id!} registrations={registrations || []} />
+          </TabsContent>
+        )}
+        </Tabs>
       </motion.div>
 
       {/* User Details Dialog (Admin Only) */}
@@ -813,6 +843,16 @@ export const ManageTournamentPage = () => {
                 onChange={e => setEditFormData({...editFormData, start_date: e.target.value})}
                 className="bg-background border-border"
               />
+            </div>
+            <div className="space-y-2 pt-2 border-t border-border">
+              <Label>WhatsApp Group Link (Optional)</Label>
+              <Input 
+                value={editFormData.whatsapp_group_link}
+                onChange={e => setEditFormData({...editFormData, whatsapp_group_link: e.target.value})}
+                className="bg-background border-border"
+                placeholder="https://chat.whatsapp.com/..."
+              />
+              <p className="text-xs text-muted-foreground">This link will only be visible to players whose registration is approved.</p>
             </div>
           </div>
           <DialogFooter>

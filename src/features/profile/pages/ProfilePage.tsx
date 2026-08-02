@@ -10,7 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useProfile, useUpdateProfile, useAvatars } from "@/features/auth/hooks/useProfile";
+import { useProfile, useUpdateProfile, useAvatars, useUserChampionSeasons } from "@/features/auth/hooks/useProfile";
+import { useParams } from "react-router-dom";
+import { Trophy } from "lucide-react";
+import { ChampionName } from "@/components/ui/champion-name";
 
 const profileSchema = z.object({
   displayName: z.string().min(2, "Display name must be at least 2 characters"),
@@ -29,9 +32,16 @@ const rankInfo = (r: number) => {
 };
 
 export const ProfilePage = () => {
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { data: profile, isLoading } = useProfile(user?.id);
+  
+  // If we have an id in the URL, view that user. Otherwise view our own profile.
+  const isViewingOther = !!id && id !== user?.id;
+  const targetUserId = isViewingOther ? id : user?.id;
+
+  const { data: profile, isLoading } = useProfile(targetUserId);
   const { data: avatars, isLoading: isAvatarsLoading } = useAvatars();
+  const { data: championSeasons } = useUserChampionSeasons(targetUserId);
   const updateProfile = useUpdateProfile();
 
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
@@ -93,7 +103,14 @@ export const ProfilePage = () => {
               )}
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-foreground">{profile?.display_name || 'My Profile'}</h1>
+              <div className="flex items-center gap-2">
+                <ChampionName 
+                  name={profile?.display_name || 'Unknown Player'}
+                  isChampion={profile?.is_champion}
+                  season={profile?.champion_season || undefined}
+                  className="text-lg font-semibold text-foreground"
+                />
+              </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <Shield className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">{profile?.player_id}</span>
@@ -106,9 +123,40 @@ export const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Edit Card */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
-            <h2 className="text-sm font-semibold text-foreground mb-5">Edit Profile</h2>
+          {/* Achievements Section */}
+          {(championSeasons && championSeasons.length > 0) && (
+            <div className="bg-gradient-to-br from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-2xl p-6 shadow-lg mb-6">
+              <h2 className="text-sm font-semibold text-yellow-500 mb-4 flex items-center gap-2 uppercase tracking-widest">
+                <Trophy className="w-4 h-4" /> Achievements
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {championSeasons.map((season) => (
+                  <div key={season.id} className="bg-black/40 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-4">
+                    <div className="bg-yellow-500/20 p-2 rounded-lg shrink-0">
+                      <Trophy className="w-6 h-6 text-yellow-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-lg">Season Champion</h3>
+                      <p className="text-yellow-500/80 text-sm font-medium">{season.season_name}</p>
+                      <div className="flex gap-4 mt-2">
+                        <div className="text-xs text-muted-foreground">
+                          <span className="text-white font-medium">{season.final_ar}</span> Rating
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          <span className="text-white font-medium">{season.total_wins}</span> Wins
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Edit Card - Only show if it's our own profile */}
+          {!isViewingOther && (
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+              <h2 className="text-sm font-semibold text-foreground mb-5">Edit Profile</h2>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Display Name */}
@@ -191,7 +239,8 @@ export const ProfilePage = () => {
                 ) : "Save Changes"}
               </Button>
             </form>
-          </div>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

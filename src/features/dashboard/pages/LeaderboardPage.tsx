@@ -8,6 +8,9 @@ import { User, Target } from "lucide-react";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 
+import { ChampionName } from "@/components/ui/champion-name";
+import { SeasonCountdown } from "@/components/ui/season-countdown";
+
 export const LeaderboardPage = () => {
   const { data: leaderboard, isLoading } = useLeaderboard();
   const { data: avatars } = useAvatars();
@@ -27,7 +30,8 @@ export const LeaderboardPage = () => {
           <Trophy className="w-12 h-12 text-primary" />
         </motion.div>
         <h1 className="text-4xl font-display font-bold">Global Leaderboard</h1>
-        <p className="text-muted-foreground mt-2">The top eFootball players on the platform</p>
+        <p className="text-muted-foreground mt-2 mb-2">The top eFootball players on the platform</p>
+        <SeasonCountdown />
         
         {user && leaderboard?.some(p => p.player_id === user.id) && (
           <Button 
@@ -86,12 +90,12 @@ export const LeaderboardPage = () => {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-lg">{player.display_name || "Unknown Player"}</span>
-                          {player.is_previous_champion && (
-                            <span className="bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-yellow-500/30" title={`Champion: ${player.champion_season}`}>
-                              Prev Champ
-                            </span>
-                          )}
+                          <ChampionName 
+                            name={player.display_name || "Unknown Player"}
+                            isChampion={player.is_previous_champion}
+                            season={player.champion_season || undefined}
+                            className="text-lg"
+                          />
                         </div>
                       </div>
                     </div>

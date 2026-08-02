@@ -127,13 +127,13 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
     const pathsToDelete = match.match_submissions
       .filter((s: any) => s.screenshot_path)
       .map((s: any) => {
-         const url = s.screenshot_path;
-         const matchStr = 'match_screenshots/';
-         const idx = url.indexOf(matchStr);
-         return idx !== -1 ? url.substring(idx + matchStr.length) : null;
+        const url = s.screenshot_path;
+        const matchStr = 'match_screenshots/';
+        const idx = url.indexOf(matchStr);
+        return idx !== -1 ? url.substring(idx + matchStr.length) : null;
       })
       .filter(Boolean);
-    
+
     if (pathsToDelete.length > 0) {
       await supabase.storage.from('match_screenshots').remove(pathsToDelete);
     }
@@ -319,7 +319,7 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
                 : "TBD"}
             </span>
             {match.deadline && (
-               <span className="text-[9px] text-muted-foreground/80 lowercase tracking-normal font-medium mt-0.5">dl: {new Intl.DateTimeFormat('default', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(match.deadline))}</span>
+              <span className="text-[9px] text-muted-foreground/80 lowercase tracking-normal font-medium mt-0.5">dl: {new Intl.DateTimeFormat('default', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(match.deadline))}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -387,8 +387,8 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
                           <div className="absolute right-[-24px] w-[24px] h-[2px] bg-primary/40 top-1/2 -translate-y-1/2 z-0"></div>
                           <div
                             className={`absolute right-[-24px] w-[2px] bg-primary/40 z-0 ${isTopMatchInPair
-                                ? 'top-1/2 h-[50%]'
-                                : 'bottom-1/2 h-[50%]'
+                              ? 'top-1/2 h-[50%]'
+                              : 'bottom-1/2 h-[50%]'
                               }`}
                           ></div>
                         </>

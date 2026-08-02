@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Trophy, Play, Eye, Users, BarChart3 } from "lucide-react";
+import { Trophy, Play, Eye, Users, BarChart3, CreditCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase";
@@ -24,6 +24,19 @@ const useAllAdminTournaments = () => useQuery({
   },
 });
 
+const usePendingPaymentsCount = () => useQuery({
+  queryKey: ['pending-payments-count'],
+  queryFn: async () => {
+    const { count, error } = await supabase
+      .from('registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('registration_status', 'pending')
+      .not('payment_screenshot_url', 'is', null);
+    if (error) throw error;
+    return count ?? 0;
+  },
+});
+
 const statusConfig: Record<string, { label: string; color: string }> = {
   upcoming: { label: 'Upcoming', color: 'bg-blue-500/15 text-blue-400' },
   registration: { label: 'Registration', color: 'bg-primary/15 text-primary' },
@@ -34,6 +47,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 const AdminTournamentsPage = () => {
   const navigate = useNavigate();
   const { data: tournaments, isLoading } = useAllAdminTournaments();
+  const { data: pendingPaymentsCount = 0 } = usePendingPaymentsCount();
 
   const counts = {
     live: tournaments?.filter(t => t.status === 'live').length || 0,
@@ -63,20 +77,39 @@ const AdminTournamentsPage = () => {
                 <p className="text-muted-foreground">Platform-wide tournament management</p>
               </div>
             </div>
-            <Button onClick={() => navigate('/organizer/tournaments/new')} className="shadow-glow-primary">
-              <Trophy className="w-4 h-4 mr-2" /> Create Tournament
-            </Button>
+            <div className="flex items-center gap-2">
+              {pendingPaymentsCount > 0 && (
+                <Button
+                  onClick={() => navigate('/admin/finances')}
+                  className="gap-2 bg-yellow-500 hover:bg-yellow-400 text-black font-semibold"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Review Payments
+                  <span className="bg-black/20 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {pendingPaymentsCount}
+                  </span>
+                </Button>
+              )}
+              <Button onClick={() => navigate('/organizer/tournaments/new')} className="shadow-glow-primary">
+                <Trophy className="w-4 h-4 mr-2" /> Create Tournament
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Live Tournaments', value: counts.live, icon: Play, color: 'text-green-400' },
             { label: 'Upcoming / Open', value: counts.upcoming, icon: Trophy, color: 'text-primary' },
             { label: 'Completed', value: counts.completed, icon: BarChart3, color: 'text-muted-foreground' },
+            { label: 'Pending Payments', value: pendingPaymentsCount, icon: CreditCard, color: 'text-yellow-400', onClick: () => navigate('/admin/finances') },
           ].map(item => (
-            <Card key={item.label} className="p-4 bg-gradient-card border-border">
+            <Card
+              key={item.label}
+              className={`p-4 bg-gradient-card border-border ${'onClick' in item ? 'cursor-pointer hover:border-yellow-500/40 transition-colors' : ''}`}
+              onClick={'onClick' in item ? item.onClick : undefined}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground">{item.label}</p>

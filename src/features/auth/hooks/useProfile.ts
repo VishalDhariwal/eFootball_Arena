@@ -123,3 +123,57 @@ export const useAvatars = () => {
     },
   });
 };
+
+export const useLatestChampion = () => {
+  return useQuery({
+    queryKey: ["latest-champion"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("season_archives")
+        .select("*, profile:profiles(display_name, avatar_id)")
+        .eq("global_rank", 1)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== "PGRST116") throw error; // Ignore not found
+      return data || null;
+    }
+  });
+};
+
+export const useHallOfChampions = () => {
+  return useQuery({
+    queryKey: ["hall-of-champions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("season_archives")
+        .select("*, profile:profiles(display_name, avatar_id)")
+        .eq("global_rank", 1)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+};
+
+export const useUserChampionSeasons = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: ["champion-seasons", userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from("season_archives")
+        .select("*")
+        .eq("player_id", userId)
+        .eq("global_rank", 1)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!userId,
+  });
+};
+

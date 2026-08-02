@@ -3,15 +3,25 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trophy, Calendar, Users, Activity, Layers, ChevronRight, Search, ShieldAlert } from "lucide-react";
+import { Trophy, Calendar, Users, Activity, Layers, ChevronRight, Search, ShieldAlert, Clock, IndianRupee, CheckCircle, XCircle, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useUserTournaments } from "@/features/tournaments/hooks/useRegistrations";
+import { useUserTournaments, useRequestRefund } from "@/features/tournaments/hooks/useRegistrations";
+import { RefundRequestModal } from "@/features/tournaments/components/RefundRequestModal";
+import { toast } from "sonner";
 
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Request Sent', color: 'text-yellow-500', bg: 'bg-yellow-500/10 border-yellow-500/20' },
-  approved: { label: 'Enrolled', color: 'text-green-500', bg: 'bg-green-500/10 border-green-500/20' },
-  rejected: { label: 'Rejected', color: 'text-red-500', bg: 'bg-red-500/10 border-red-500/20' },
+// Payment-aware status config
+const getRegStatusConfig = (reg: any) => {
+  const status = reg.registration_status;
+  const hasPayment = !!reg.payment_screenshot_url;
+  const entryFee = Number((reg.tournament as any)?.entry_fee || 0);
+  const isPaid = entryFee > 0;
+
+  if (status === 'approved') return { label: 'Enrolled', color: 'text-green-500', bg: 'bg-green-500/10 border-green-500/20', icon: CheckCircle };
+  if (status === 'rejected') return { label: 'Rejected', color: 'text-red-500', bg: 'bg-red-500/10 border-red-500/20', icon: XCircle };
+  if (status === 'pending' && hasPayment) return { label: 'Payment Under Review', color: 'text-yellow-500', bg: 'bg-yellow-500/10 border-yellow-500/20', icon: Clock };
+  if (status === 'pending' && isPaid && !hasPayment) return { label: 'Payment Required', color: 'text-orange-500', bg: 'bg-orange-500/10 border-orange-500/20', icon: IndianRupee };
+  return { label: 'Pending', color: 'text-yellow-500', bg: 'bg-yellow-500/10 border-yellow-500/20', icon: Clock };
 };
 
 const tournamentStatusConfig: Record<string, { label: string; color: string; pulse?: boolean }> = {
@@ -26,6 +36,11 @@ export const MyTournamentsPage = () => {
   const { user } = useAuth();
   const { data: myTournaments, isLoading } = useUserTournaments(user?.id);
   const [activeTab, setActiveTab] = useState("active");
+  const requestRefund = useRequestRefund();
+
+  // Refund Modal State
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [selectedRegForRefund, setSelectedRegForRefund] = useState<any>(null);
 
   // Filtering
   const activeTournaments = myTournaments?.filter(t => {
@@ -41,11 +56,30 @@ export const MyTournamentsPage = () => {
 
   const TournamentCard = ({ reg, variant = 'default' }: { reg: any; variant?: 'live' | 'default' | 'completed' }) => {
     const t = reg.tournament;
-    const regStatus = statusConfig[reg.registration_status] || statusConfig.pending;
+    const regStatus = getRegStatusConfig(reg);
     const tStatus = tournamentStatusConfig[t?.status] || { label: t?.status, color: 'text-white' };
     const isChampion = t?.status === 'completed' && t?.winner_id === user?.id;
+    const needsPayment = reg.registration_status === 'pending' && !reg.payment_screenshot_url && Number(t?.entry_fee || 0) > 0;
+    
+    // Refund Eligibility
+    const hasRefundRequested = reg.refund_requested;
+    const canRequestRefund = !hasRefundRequested && 
+                             (reg.registration_status === 'pending' || reg.registration_status === 'approved') && 
+                             (t?.status === 'upcoming' || t?.status === 'registration') &&
+                             !!reg.payment_screenshot_url; // Only allow refunds if they actually paid/submitted
+
+    const RegStatusIcon = regStatus.icon;
 
     const handleClick = () => navigate(`/tournaments/${t?.id}`);
+    const handlePay = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigate(`/tournaments/${t?.id}/pay`);
+    };
+    const handleRefundClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setSelectedRegForRefund(reg);
+      setRefundModalOpen(true);
+    };
 
     return (
       <motion.div
@@ -71,7 +105,8 @@ export const MyTournamentsPage = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                 {/* Registration Status */}
-                <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded border ${regStatus.bg} ${regStatus.color}`}>
+                <span className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded border ${regStatus.bg} ${regStatus.color}`}>
+                  <RegStatusIcon className="w-2.5 h-2.5" />
                   {regStatus.label}
                 </span>
                 
@@ -115,10 +150,42 @@ export const MyTournamentsPage = () => {
             </div>
 
             {/* Right Side: CTA */}
-            <div className="flex items-center gap-3 shrink-0 sm:border-l sm:border-border/50 sm:pl-4 pt-3 sm:pt-0 border-t border-border/50 sm:border-t-0">
-              <span className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-1">
-                Open <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </span>
+            <div className="flex flex-col sm:items-end justify-center gap-2 shrink-0 sm:border-l sm:border-border/50 sm:pl-4 pt-3 sm:pt-0 border-t border-border/50 sm:border-t-0">
+              {hasRefundRequested ? (
+                <div className="text-right">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    {reg.refund_status === 'pending' && <Clock className="w-3 h-3" />}
+                    {reg.refund_status === 'approved' && <CheckCircle className="w-3 h-3" />}
+                    {reg.refund_status === 'completed' && <CheckCircle className="w-3 h-3" />}
+                    {reg.refund_status === 'rejected' && <XCircle className="w-3 h-3 text-red-500" />}
+                    Refund {reg.refund_status}
+                  </span>
+                  {reg.refund_status === 'pending' && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Waiting for admin</p>
+                  )}
+                </div>
+              ) : needsPayment ? (
+                <Button
+                  size="sm"
+                  className="h-8 text-xs bg-orange-500 hover:bg-orange-400 text-white"
+                  onClick={handlePay}
+                >
+                  <IndianRupee className="w-3 h-3 mr-1" /> Pay Entry Fee
+                </Button>
+              ) : canRequestRefund ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 hover:border-yellow-500/50"
+                  onClick={handleRefundClick}
+                >
+                  <RotateCcw className="w-3 h-3 mr-1.5" /> Request Refund
+                </Button>
+              ) : (
+                <span className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-1">
+                  Open <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </span>
+              )}
             </div>
 
           </div>
@@ -252,6 +319,27 @@ export const MyTournamentsPage = () => {
           </Tabs>
         )}
       </div>
+
+      <RefundRequestModal
+        isOpen={refundModalOpen}
+        onClose={() => {
+          setRefundModalOpen(false);
+          setSelectedRegForRefund(null);
+        }}
+        tournamentName={selectedRegForRefund?.tournament?.name || ""}
+        isSubmitting={requestRefund.isPending}
+        onSubmit={async (data) => {
+          await requestRefund.mutateAsync({
+            registrationId: selectedRegForRefund.id,
+            upiId: data.upiId,
+            phone: data.phone,
+            reason: data.reason,
+          });
+          toast.success("Refund request submitted successfully.");
+          setRefundModalOpen(false);
+          setSelectedRegForRefund(null);
+        }}
+      />
     </div>
   );
 };

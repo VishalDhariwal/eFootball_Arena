@@ -56,13 +56,25 @@ export const useCreateTournament = () => {
 
   return useMutation({
     mutationFn: async (tournament: any) => {
+      const { whatsapp_group_link, ...tournamentData } = tournament;
+      
       const { data, error } = await supabase
         .from("tournaments")
-        .insert(tournament)
+        .insert({ ...tournamentData, has_whatsapp_group: !!whatsapp_group_link })
         .select()
         .single();
 
       if (error) throw error;
+      
+      if (whatsapp_group_link) {
+        const { error: secretsError } = await supabase
+          .from("tournament_secrets")
+          .insert({ tournament_id: data.id, whatsapp_group_link });
+        if (secretsError) {
+          console.error("Failed to save whatsapp group link", secretsError);
+        }
+      }
+      
       return data;
     },
     onSuccess: () => {
@@ -75,7 +87,11 @@ export const useUpdateTournament = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & any) => {
+    mutationFn: async ({ id, whatsapp_group_link, ...updates }: { id: string } & any) => {
+      if (whatsapp_group_link !== undefined) {
+         updates.has_whatsapp_group = !!whatsapp_group_link;
+      }
+      
       const { data, error } = await supabase
         .from("tournaments")
         .update(updates)
@@ -84,6 +100,20 @@ export const useUpdateTournament = () => {
         .single();
 
       if (error) throw error;
+      
+      if (whatsapp_group_link !== undefined) {
+         if (whatsapp_group_link) {
+           await supabase
+             .from("tournament_secrets")
+             .upsert({ tournament_id: id, whatsapp_group_link }, { onConflict: "tournament_id" });
+         } else {
+           await supabase
+             .from("tournament_secrets")
+             .delete()
+             .eq("tournament_id", id);
+         }
+      }
+
       return data;
     },
     onSuccess: (data, variables) => {
@@ -239,5 +269,23 @@ export const useOrganizerAnalytics = (organizerId: string | undefined) => {
       };
     },
     enabled: !!organizerId,
+  });
+};
+
+export const useTournamentWhatsAppLink = (tournamentId: string) => {
+  return useQuery({
+    queryKey: ["tournament-whatsapp-link", tournamentId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournament_secrets")
+        .select("whatsapp_group_link")
+        .eq("tournament_id", tournamentId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data?.whatsapp_group_link || null;
+    },
+    enabled: !!tournamentId,
+    retry: false,
   });
 };

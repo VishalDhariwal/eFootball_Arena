@@ -6,15 +6,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Trophy, ArrowLeft, Users, User, CheckCircle, Clock, XCircle, Settings,
   Swords, LayoutGrid, ChevronRight, Target, Calendar,
-  Shield, FileText, Flag, Star, Medal, IndianRupee, Eye
+  Shield, FileText, Flag, Star, Medal, IndianRupee, Eye, MessageCircle, Lock
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useTournament, useFinishTournament } from "@/features/tournaments/hooks/useTournaments";
-import { useUserRegistration, useRegisterForTournament, useRegistrations } from "@/features/tournaments/hooks/useRegistrations";
+import { useTournament, useFinishTournament, useTournamentWhatsAppLink } from "@/features/tournaments/hooks/useTournaments";
+import { useUserRegistration, useRegisterForTournament, useRegistrations, useRequestRefund, useRequestPrize } from "@/features/tournaments/hooks/useRegistrations";
 import { useMatches, useTournamentLeaderboard } from "@/features/matches/hooks/useMatches";
+import { ChampionName } from "@/components/ui/champion-name";
 import { useAvatars } from "@/features/auth/hooks/useProfile";
 import { toast } from "sonner";
 import { TournamentBracket } from "@/features/tournaments/components/TournamentBracket";
+import { RefundRequestModal } from "@/features/tournaments/components/RefundRequestModal";
+import { PrizeRequestModal } from "@/features/tournaments/components/PrizeRequestModal";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
@@ -103,7 +106,14 @@ const TournamentLeaderboard = ({
                       })()}
                     </div>
                     <div>
-                      <div className="font-bold text-white">{(stat.user as any)?.display_name || "Unknown"}</div>
+                      <div className="flex items-center gap-2">
+                        <ChampionName
+                          name={(stat.user as any)?.display_name || "Unknown"}
+                          isChampion={(stat.user as any)?.is_champion}
+                          season={(stat.user as any)?.champion_season || undefined}
+                          className="font-bold text-white"
+                        />
+                      </div>
                     </div>
                   </div>
                 </TableCell>
@@ -133,7 +143,7 @@ const RegBadge = ({ status }: { status: string | undefined }) => {
   );
   if (status === 'pending') return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 rounded-full text-sm font-medium">
-      <Clock className="w-3.5 h-3.5" /> Pending Approval
+      <Clock className="w-3.5 h-3.5" /> Under Review
     </span>
   );
   if (status === 'rejected') return (
@@ -167,14 +177,22 @@ export const TournamentDetailPage = () => {
   const { data: registration, refetch: refetchReg } = useUserRegistration(id || "", user?.id);
   const { data: allRegistrations, isLoading: isRegLoading } = useRegistrations(id || "");
   const { data: allMatches } = useMatches(id || "");
+  const { data: whatsappLink } = useTournamentWhatsAppLink(id || "");
   const registerMutation = useRegisterForTournament();
+  const requestRefund = useRequestRefund();
+  const requestPrize = useRequestPrize();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as Tab) || 'overview';
   const setActiveTab = (tab: Tab) => setSearchParams({ tab });
 
-  const approvedCount = allRegistrations?.filter(r => r.registration_status === 'approved').length || 0;
-  const totalRequestedCount = allRegistrations?.filter(r => r.registration_status !== 'rejected').length || 0;
+  // Modals
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [prizeModalOpen, setPrizeModalOpen] = useState(false);
+  const [prizeRequestType, setPrizeRequestType] = useState<'winner' | 'runner_up'>('winner');
+
+  const approvedCount = allRegistrations?.filter(r => r.registration_status === 'approved')?.length || 0;
+  const totalRequestedCount = allRegistrations?.filter(r => r.registration_status !== 'rejected')?.length || 0;
   const canManage = user?.id === tournament?.organizer_id || isAdmin;
   const regStatus = registration?.registration_status;
   const isApprovedPlayer = regStatus === 'approved';
@@ -186,18 +204,25 @@ export const TournamentDetailPage = () => {
 
   // Derive tournament winner: winner of the final verified match
   // The final match in a single elimination bracket is the one with no next_match_id
-  const finalMatch = allMatches?.find((m: any) => 
-    (m.status === 'verified' || m.status === 'walkover') && 
-    m.winner_id && 
-    m.brackets?.length > 0 && 
+  const finalMatch = allMatches?.find((m: any) =>
+    (m.status === 'verified' || m.status === 'walkover') &&
+    m.winner_id &&
+    m.brackets?.length > 0 &&
     m.brackets[0].next_match_id === null
   );
 
   // Resolve winner profile from match data
   const tournamentWinnerProfile = finalMatch
     ? (finalMatch.winner_id === finalMatch.player1_id
-        ? (finalMatch.player1 as any)
-        : (finalMatch.player2 as any))
+      ? (finalMatch.player1 as any)
+      : (finalMatch.player2 as any))
+    : null;
+
+  // Resolve runner-up profile
+  const tournamentRunnerUpProfile = finalMatch
+    ? (finalMatch.winner_id === finalMatch.player1_id
+      ? (finalMatch.player2 as any)
+      : (finalMatch.player1 as any))
     : null;
 
   // Auto-finish: if a winner exists and tournament is still live, mark it completed
@@ -214,13 +239,57 @@ export const TournamentDetailPage = () => {
     }
   }, [tournament?.id, tournament?.status, tournamentWinnerProfile?.display_name]);
 
+  const entryFee = Number(tournament?.entry_fee || 0);
+  const isPaidTournament = entryFee > 0;
+  const prizeFirst = Number(tournament?.prize_first || 0);
+  const prizeSecond = Number(tournament?.prize_second || 0);
+
+  // payment state helpers
+  const hasSubmittedPayment = !!registration?.payment_screenshot_url;
+  const isPaymentUnderReview = regStatus === 'pending' && hasSubmittedPayment;
+  const needsPayment = regStatus === 'pending' && !hasSubmittedPayment;
+
+  // refund state helpers
+  const hasRefundRequested = registration?.refund_requested;
+  const canRequestRefund = !hasRefundRequested &&
+    (regStatus === 'pending' || regStatus === 'approved') &&
+    (tournament?.status === 'upcoming' || tournament?.status === 'registration') &&
+    hasSubmittedPayment;
+
+  // prize state helpers
+  const isWinner = user && tournamentWinnerProfile?.id === user.id;
+  const isRunnerUp = user && tournamentRunnerUpProfile?.id === user.id;
+  const prizeStatus = registration?.prize_status;
+  const canRequestWinnerPrize = isWinner && prizeFirst > 0 && prizeStatus === 'none';
+  const canRequestRunnerUpPrize = isRunnerUp && prizeSecond > 0 && prizeStatus === 'none';
+
   const handleRegister = () => {
     if (!user) { toast.error("Please login to register"); navigate("/login"); return; }
-    registerMutation.mutate({ tournamentId: id!, userId: user.id }, {
-      onSuccess: () => { toast.success("Registration request sent! Waiting for organizer approval."); refetchReg(); },
-      onError: (err) => toast.error("Failed to register. " + err.message)
-    });
+    if (isPaidTournament) {
+      // For paid tournaments: navigate to payment page (register happens there)
+      navigate(`/tournaments/${id}/pay`);
+    } else {
+      // Free tournament: register immediately
+      registerMutation.mutate({ tournamentId: id!, userId: user.id }, {
+        onSuccess: () => { toast.success("You've been enrolled! No payment required."); refetchReg(); },
+        onError: (err) => toast.error("Failed to register. " + err.message)
+      });
+    }
   };
+
+  const handleRequestPrizeSubmit = async (data: { upiId?: string; phone?: string }) => {
+    if (!registration) return;
+    await requestPrize.mutateAsync({
+      registrationId: registration.id,
+      upiId: data.upiId,
+      phone: data.phone,
+      type: prizeRequestType,
+    });
+    setPrizeModalOpen(false);
+    toast.success("Prize claim requested successfully!");
+  };
+
+  const handleGoToPayment = () => navigate(`/tournaments/${id}/pay`);
 
   if (isLoading) {
     return (
@@ -275,13 +344,12 @@ export const TournamentDetailPage = () => {
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <span className={`px-2 py-0.5 rounded-md text-xs font-semibold capitalize border ${
-                      isFinished
+                    <span className={`px-2 py-0.5 rounded-md text-xs font-semibold capitalize border ${isFinished
                         ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
                         : tournament.status === 'live'
                           ? 'bg-green-500/10 text-green-500 border-green-500/20'
                           : 'bg-primary/10 text-primary border-primary/20'
-                    }`}>
+                      }`}>
                       {isFinished ? 'Completed' : tournament.status}
                     </span>
                     <span className="px-2 py-0.5 bg-muted border border-border rounded-md text-xs font-medium text-muted-foreground capitalize">
@@ -331,11 +399,120 @@ export const TournamentDetailPage = () => {
                   {!user && !isFinished && (
                     <Button size="sm" className="h-8 text-xs" onClick={() => navigate("/login")}>Login to Join</Button>
                   )}
+                  {tournament.has_whatsapp_group && (
+                    isApprovedPlayer || canManage ? (
+                      <Button size="sm" className="h-8 text-xs bg-[#25D366] hover:bg-[#1DA851] text-white border-none shadow-glow-primary" onClick={() => window.open(whatsappLink, "_blank")}>
+                        <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> Join WhatsApp Group
+                      </Button>
+                    ) : regStatus === 'pending' ? (
+                      <Button size="sm" variant="outline" className="h-8 text-xs bg-muted/40 cursor-not-allowed border-border text-muted-foreground">
+                        <Lock className="w-3.5 h-3.5 mr-1.5" /> WhatsApp Group (Pending Approval)
+                      </Button>
+                    ) : regStatus === 'rejected' ? (
+                      <Button size="sm" variant="outline" className="h-8 text-xs bg-muted/40 cursor-not-allowed border-border text-muted-foreground">
+                        <XCircle className="w-3.5 h-3.5 mr-1.5" /> WhatsApp Group (Access Denied)
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" className="h-8 text-xs bg-muted/40 cursor-not-allowed border-border text-muted-foreground">
+                        <Lock className="w-3.5 h-3.5 mr-1.5" /> Join to access WhatsApp Group
+                      </Button>
+                    )
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* ── Prizes / Winner Banners ───────────────────────────────────── */}
+        {isFinished && (tournamentWinnerProfile || tournamentRunnerUpProfile) && (
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {tournamentWinnerProfile && (
+              <Card className="bg-yellow-500/5 border-yellow-500/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Trophy className="w-24 h-24 text-yellow-500" />
+                </div>
+                <CardContent className="p-5 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-xs font-semibold text-yellow-500 uppercase tracking-wider mb-1">Champion</h3>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xl font-bold text-white">{tournamentWinnerProfile.display_name}</p>
+                      {prizeFirst > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold">
+                          ₹{prizeFirst}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {canRequestWinnerPrize && (
+                    <Button
+                      onClick={() => {
+                        setPrizeRequestType('winner');
+                        setPrizeModalOpen(true);
+                      }}
+                      className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold shadow-glow-primary shrink-0"
+                    >
+                      <IndianRupee className="w-4 h-4 mr-1.5" /> Request Prize
+                    </Button>
+                  )}
+                  {isWinner && prizeStatus === 'requested' && (!registration?.prize_type || registration?.prize_type === 'winner') && (
+                    <span className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/20">
+                      Prize Requested
+                    </span>
+                  )}
+                  {isWinner && prizeStatus === 'paid' && (!registration?.prize_type || registration?.prize_type === 'winner') && (
+                    <span className="px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20 flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5" /> Prize Given
+                    </span>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {tournamentRunnerUpProfile && (
+              <Card className="bg-slate-500/5 border-slate-500/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Medal className="w-24 h-24 text-slate-400" />
+                </div>
+                <CardContent className="p-5 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Runner Up</h3>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xl font-bold text-white">{tournamentRunnerUpProfile.display_name}</p>
+                      {prizeSecond > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-300 text-xs font-semibold">
+                          ₹{prizeSecond}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {canRequestRunnerUpPrize && (
+                    <Button
+                      onClick={() => {
+                        setPrizeRequestType('runner_up');
+                        setPrizeModalOpen(true);
+                      }}
+                      variant="outline"
+                      className="border-slate-500/50 text-slate-300 hover:bg-slate-500/10 shrink-0"
+                    >
+                      <IndianRupee className="w-4 h-4 mr-1.5" /> Request Prize
+                    </Button>
+                  )}
+                  {isRunnerUp && prizeStatus === 'requested' && (!registration?.prize_type || registration?.prize_type === 'runner_up') && (
+                    <span className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/20">
+                      Prize Requested
+                    </span>
+                  )}
+                  {isRunnerUp && prizeStatus === 'paid' && (!registration?.prize_type || registration?.prize_type === 'runner_up') && (
+                    <span className="px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20 flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5" /> Prize Given
+                    </span>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* ── Tab Bar ───────────────────────────────────────────────────── */}
         <div className="mb-6 border-b border-border">
@@ -347,11 +524,10 @@ export const TournamentDetailPage = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 shrink-0 ${
-                    isActive
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 shrink-0 ${isActive
                       ? 'border-primary text-foreground'
                       : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {tab.label}
@@ -504,27 +680,59 @@ export const TournamentDetailPage = () => {
                         <Button className="w-full shadow-glow-primary" onClick={() => navigate("/login")}>Login to Register</Button>
                       ) : registration ? (
                         <div className="text-center">
-                          {regStatus === 'approved' && (
+                          {regStatus === 'approved' && !hasRefundRequested && (
                             <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
                               <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-1" />
                               <p className="font-bold text-green-400 text-sm">Approved & Enrolled</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">You're in the tournament!</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 mb-3">You're in the tournament!</p>
+                              {canRequestRefund && (
+                                <Button size="sm" variant="outline" className="w-full border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10" onClick={() => setRefundModalOpen(true)}>
+                                  Request Refund
+                                </Button>
+                              )}
                             </div>
                           )}
-                          {regStatus === 'pending' && (
+                          {regStatus === 'pending' && isPaymentUnderReview && !hasRefundRequested && (
                             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
                               <Clock className="w-6 h-6 text-yellow-400 mx-auto mb-1" />
-                              <p className="font-bold text-yellow-400 text-sm">Request Sent</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">Awaiting organizer approval.</p>
+                              <p className="font-bold text-yellow-400 text-sm">Payment Under Review</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 mb-3">Admin is reviewing your payment screenshot.</p>
+                              {canRequestRefund && (
+                                <Button size="sm" variant="outline" className="w-full border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10" onClick={() => setRefundModalOpen(true)}>
+                                  Request Refund
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                          {hasRefundRequested && (
+                            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                              {registration?.refund_status === 'pending' && <Clock className="w-6 h-6 text-yellow-400 mx-auto mb-1" />}
+                              {registration?.refund_status === 'approved' && <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-1" />}
+                              {registration?.refund_status === 'completed' && <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-1" />}
+                              {registration?.refund_status === 'rejected' && <XCircle className="w-6 h-6 text-red-500 mx-auto mb-1" />}
+                              <p className="font-bold text-yellow-400 text-sm capitalize">Refund {registration?.refund_status}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {registration?.refund_status === 'pending' ? 'Waiting for admin to process.' : 'Check your payment method.'}
+                              </p>
+                            </div>
+                          )}
+                          {regStatus === 'pending' && needsPayment && !hasRefundRequested && (
+                            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                              <IndianRupee className="w-6 h-6 text-orange-400 mx-auto mb-1" />
+                              <p className="font-bold text-orange-400 text-sm">Payment Required</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 mb-3">Complete your payment to secure your spot.</p>
+                              <Button size="sm" className="w-full bg-orange-500 hover:bg-orange-400 text-white" onClick={handleGoToPayment}>
+                                Pay Entry Fee
+                              </Button>
                             </div>
                           )}
                           {regStatus === 'rejected' && (
                             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                               <XCircle className="w-6 h-6 text-red-400 mx-auto mb-1" />
-                              <p className="font-bold text-red-400 text-sm">Request Rejected</p>
-                              <p className="text-xs text-muted-foreground mt-0.5 mb-3">Contact the organizer.</p>
+                              <p className="font-bold text-red-400 text-sm">Registration Rejected</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 mb-3">Payment could not be verified.</p>
                               <Button size="sm" variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/20" onClick={handleRegister} disabled={registerMutation.isPending}>
-                                {registerMutation.isPending ? "Sending..." : "Request Again"}
+                                {registerMutation.isPending ? "Sending..." : "Try Again"}
                               </Button>
                             </div>
                           )}
@@ -685,8 +893,13 @@ export const TournamentDetailPage = () => {
                               {((reg.user as any)?.display_name || '?')[0].toUpperCase()}
                             </span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-white truncate">{(reg.user as any)?.display_name || "Unknown"}</p>
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <ChampionName
+                              name={(reg.user as any)?.display_name || "Unknown"}
+                              isChampion={(reg.user as any)?.is_champion}
+                              season={(reg.user as any)?.champion_season || undefined}
+                              className="font-medium text-sm text-white truncate"
+                            />
                           </div>
                         </li>
                       ))}
@@ -771,6 +984,36 @@ export const TournamentDetailPage = () => {
           </motion.div>
         </AnimatePresence>
       </div>
+      {registration && (
+        <>
+          <RefundRequestModal
+            isOpen={refundModalOpen}
+            onClose={() => setRefundModalOpen(false)}
+            onSubmit={async (data) => {
+              if (!registration) return;
+              await requestRefund.mutateAsync({
+                registrationId: registration.id,
+                upiId: data.upiId,
+                phone: data.phone,
+                reason: data.reason,
+              });
+              toast.success("Refund request submitted successfully.");
+              setRefundModalOpen(false);
+            }}
+            isSubmitting={requestRefund.isPending}
+            tournamentName={tournament?.name}
+          />
+          <PrizeRequestModal
+            isOpen={prizeModalOpen}
+            onClose={() => setPrizeModalOpen(false)}
+            onSubmit={handleRequestPrizeSubmit}
+            isSubmitting={requestPrize.isPending}
+            tournamentName={tournament?.name}
+            prizeAmount={prizeRequestType === 'winner' ? prizeFirst : prizeSecond}
+            prizeType={prizeRequestType}
+          />
+        </>
+      )}
     </div>
   );
 };

@@ -23,6 +23,7 @@ const tournamentSchema = z.object({
   entry_fee: z.coerce.number().min(0).optional(),
   prize_first: z.coerce.number().min(0).optional(),
   prize_second: z.coerce.number().min(0).optional(),
+  whatsapp_group_link: z.union([z.string().url("Must be a valid URL"), z.literal("")]).optional(),
 });
 
 type TournamentFormValues = z.infer<typeof tournamentSchema>;
@@ -38,7 +39,7 @@ export const CreateTournamentPage = () => {
       name: "",
       description: "",
       format: "single_elimination",
-
+      whatsapp_group_link: "",
     },
   });
 
@@ -207,6 +208,18 @@ export const CreateTournamentPage = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* WhatsApp Link */}
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="whatsapp_group_link">WhatsApp Group Link (Optional)</Label>
+                <Input 
+                  id="whatsapp_group_link" 
+                  {...register("whatsapp_group_link")} 
+                  placeholder="https://chat.whatsapp.com/..." 
+                />
+                <p className="text-xs text-muted-foreground">This link will only be visible to players whose registration is approved.</p>
+                {errors.whatsapp_group_link && <p className="text-sm text-destructive">{errors.whatsapp_group_link.message}</p>}
               </div>
 
               {/* Info Banner */}

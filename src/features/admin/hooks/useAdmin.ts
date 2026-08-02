@@ -23,11 +23,35 @@ export const useAdminStats = () => {
         .select("*", { count: 'exact', head: true })
         .in("status", ["verified", "completed"]);
 
+      const { count: pendingJoinRequests } = await supabase
+        .from("registrations")
+        .select("*", { count: 'exact', head: true })
+        .eq("registration_status", "pending")
+        .not("payment_screenshot_url", "is", null);
+
+      const { count: pendingRefundRequests } = await supabase
+        .from("registrations")
+        .select("*", { count: 'exact', head: true })
+        .eq("refund_status", "pending");
+
+      const { count: approvedRegistrations } = await supabase
+        .from("registrations")
+        .select("*", { count: 'exact', head: true })
+        .eq("registration_status", "approved");
+
+      const { count: totalRegistrations } = await supabase
+        .from("registrations")
+        .select("*", { count: 'exact', head: true });
+
       return {
         totalUsers: totalUsers || 0,
         pendingUsers: pendingUsers || 0,
         totalTournaments: totalTournaments || 0,
         totalMatches: totalMatches || 0,
+        pendingJoinRequests: pendingJoinRequests || 0,
+        pendingRefundRequests: pendingRefundRequests || 0,
+        approvedRegistrations: approvedRegistrations || 0,
+        totalRegistrations: totalRegistrations || 0,
       };
     },
   });

@@ -21,6 +21,7 @@ const DashboardPage = lazy(() => import("./features/dashboard/pages/DashboardPag
 const ProfilePage = lazy(() => import("./features/profile/pages/ProfilePage"));
 const TournamentsPage = lazy(() => import("./features/tournaments/pages/TournamentsPage"));
 const TournamentDetailPage = lazy(() => import("./features/tournaments/pages/TournamentDetailPage"));
+const TournamentPaymentPage = lazy(() => import("./features/tournaments/pages/TournamentPaymentPage"));
 const MyTournamentsPage = lazy(() => import("./features/tournaments/pages/MyTournamentsPage"));
 const TournamentStatsPage = lazy(() => import("./features/tournaments/pages/TournamentStatsPage"));
 const PlayerStatsPage = lazy(() => import("./features/stats/pages/PlayerStatsPage"));
@@ -36,6 +37,7 @@ const ManageTournamentPage = lazy(() => import("./features/organizer/pages/Manag
 const AdminDashboardPage = lazy(() => import("./features/admin/pages/AdminDashboardPage"));
 const AdminUsersPage = lazy(() => import("./features/admin/pages/AdminUsersPage"));
 const AdminTournamentsPage = lazy(() => import("./features/admin/pages/AdminTournamentsPage"));
+const AdminFinancesPage = lazy(() => import("./features/admin/pages/AdminFinancesPage"));
 
 const queryClient = new QueryClient();
 
@@ -66,9 +68,11 @@ const App = () => (
               {/* User routes */}
               <Route path="/dashboard" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
+              <Route path="/profile/:id" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
               <Route path="/stats" element={<ProtectedRoute><AppLayout><PlayerStatsPage /></AppLayout></ProtectedRoute>} />
               <Route path="/tournaments" element={<ProtectedRoute><AppLayout><TournamentsPage /></AppLayout></ProtectedRoute>} />
               <Route path="/tournaments/:id" element={<ProtectedRoute><AppLayout><TournamentDetailPage /></AppLayout></ProtectedRoute>} />
+              <Route path="/tournaments/:id/pay" element={<ProtectedRoute><AppLayout><TournamentPaymentPage /></AppLayout></ProtectedRoute>} />
               <Route path="/my-tournaments" element={<ProtectedRoute><AppLayout><MyTournamentsPage /></AppLayout></ProtectedRoute>} />
               <Route path="/my-tournaments/:id/stats" element={<ProtectedRoute><AppLayout><TournamentStatsPage /></AppLayout></ProtectedRoute>} />
               <Route path="/leaderboard" element={<ProtectedRoute><AppLayout><LeaderboardPage /></AppLayout></ProtectedRoute>} />
@@ -86,6 +90,7 @@ const App = () => (
               <Route path="/admin" element={<AdminRoute><AppLayout><AdminDashboardPage /></AppLayout></AdminRoute>} />
               <Route path="/admin/users" element={<AdminRoute><AppLayout><AdminUsersPage /></AppLayout></AdminRoute>} />
               <Route path="/admin/tournaments" element={<AdminRoute><AppLayout><AdminTournamentsPage /></AppLayout></AdminRoute>} />
+              <Route path="/admin/finances" element={<AdminRoute><AppLayout><AdminFinancesPage /></AppLayout></AdminRoute>} />
 
               {/* 404 */}
               <Route path="*" element={<PublicLayout><NotFoundPage /></PublicLayout>} />
