@@ -274,8 +274,8 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
       const advancer = match.player1?.display_name || match.player2?.display_name || "TBD";
       return (
         <div className="w-[240px] flex items-center justify-center relative z-10 h-[72px]">
-          <div className={`w-full h-[2px] absolute ${isFinalRound ? 'bg-yellow-500/60 shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'bg-primary/40'}`}></div>
-          <div className="bg-card/50 border border-primary/30 px-4 py-1.5 rounded-full text-xs text-muted-foreground relative z-10 shadow-sm flex items-center gap-2">
+          <div className={`w-full h-[2px] absolute ${isFinalRound ? 'bg-yellow-500/60 shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'bg-cyan-500/50 shadow-[0_0_5px_rgba(6,182,212,0.3)]'}`}></div>
+          <div className="bg-card/50 border border-cyan-500/30 px-4 py-1.5 rounded-full text-xs text-muted-foreground relative z-10 shadow-sm flex items-center gap-2">
             <span className="font-bold text-foreground">{advancer}</span>
             <span className="opacity-70">Advanced (Bye)</span>
           </div>
@@ -285,10 +285,10 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
 
     const cardClasses = isFinalRound 
       ? 'bg-background border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
-      : 'bg-card border border-primary/20 shadow-sm';
+      : 'bg-card border border-cyan-500/30 shadow-[0_0_8px_rgba(6,182,212,0.15)]';
       
     const hoverClasses = isClickable
-      ? (isFinalRound ? 'cursor-pointer hover:border-yellow-400 hover:shadow-[0_0_20px_rgba(234,179,8,0.4)] transition-all' : 'cursor-pointer hover:border-primary/50 transition-colors')
+      ? (isFinalRound ? 'cursor-pointer hover:border-yellow-400 hover:shadow-[0_0_20px_rgba(234,179,8,0.4)] transition-all' : 'cursor-pointer hover:border-cyan-400 hover:shadow-[0_0_12px_rgba(34,211,238,0.3)] transition-all')
       : '';
 
     const isPlayer1Me = match.player1_id === user?.id;
@@ -300,41 +300,61 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
         className={`relative z-10 w-[240px] rounded-xl overflow-hidden ${cardClasses} ${hoverClasses}`}
       >
         <div className="flex flex-col text-sm">
-          <div className={`flex justify-between items-center px-3 py-2 border-b ${isFinalRound ? 'border-yellow-500/20' : 'border-primary/20'} ${match.winner_id === match.player1_id ? (isFinalRound ? 'bg-yellow-500/10' : 'bg-primary/10') : (isPlayer1Me ? 'bg-secondary/10' : '')}`}>
+          <div className={`flex justify-between items-center px-3 py-2 border-b ${isFinalRound ? 'border-yellow-500/20' : 'border-cyan-500/30'} ${match.winner_id === match.player1_id ? (isFinalRound ? 'bg-yellow-500/10' : 'bg-cyan-500/10') : (isPlayer1Me ? 'bg-cyan-500/10' : '')}`}>
             <div className="flex items-center gap-2 overflow-hidden">
-              <div className={`w-1.5 h-6 rounded-full ${match.winner_id === match.player1_id ? (isFinalRound ? 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]' : 'bg-primary') : (isPlayer1Me ? 'bg-secondary' : 'bg-muted')}`}></div>
-              <span className={`truncate font-medium ${match.winner_id === match.player1_id ? (isFinalRound ? 'text-yellow-500' : 'text-primary') : (isPlayer1Me ? 'text-secondary font-bold' : 'text-foreground')}`}>
-                {match.player1?.display_name || "TBD"} {isPlayer1Me && <span className="text-[10px] opacity-70 ml-1 font-normal">(You)</span>}
+              <div className={`w-1.5 h-6 rounded-full ${match.winner_id === match.player1_id ? (isFinalRound ? 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]' : 'bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]') : (isPlayer1Me ? 'bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'bg-muted')}`}></div>
+              <span className={`truncate font-medium ${match.winner_id === match.player1_id ? (isFinalRound ? 'text-yellow-500' : 'text-cyan-400') : (isPlayer1Me ? 'text-cyan-400 font-bold drop-shadow-sm' : 'text-foreground')}`}>
+                {match.player1?.display_name || "TBD"} {isPlayer1Me && <span className="text-[10px] opacity-70 ml-1 font-normal text-cyan-300">(You)</span>}
               </span>
             </div>
-            {match.winner_id === match.player1_id && <Trophy className={`w-3 h-3 flex-shrink-0 ml-2 ${isFinalRound ? 'text-yellow-500 drop-shadow-[0_0_2px_rgba(234,179,8,0.8)]' : 'text-primary'}`} />}
+            {match.winner_id === match.player1_id && <Trophy className={`w-3 h-3 flex-shrink-0 ml-2 ${isFinalRound ? 'text-yellow-500 drop-shadow-[0_0_2px_rgba(234,179,8,0.8)]' : 'text-cyan-400 drop-shadow-[0_0_2px_rgba(34,211,238,0.8)]'}`} />}
           </div>
 
-          <div className={`flex justify-between items-center px-3 py-2 ${match.winner_id === match.player2_id ? (isFinalRound ? 'bg-yellow-500/10' : 'bg-primary/10') : (isPlayer2Me ? 'bg-secondary/10' : '')}`}>
+          <div className={`flex justify-between items-center px-3 py-2 ${match.winner_id === match.player2_id ? (isFinalRound ? 'bg-yellow-500/10' : 'bg-cyan-500/10') : (isPlayer2Me ? 'bg-cyan-500/10' : '')}`}>
             <div className="flex items-center gap-2 overflow-hidden">
-              <div className={`w-1.5 h-6 rounded-full ${match.winner_id === match.player2_id ? (isFinalRound ? 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]' : 'bg-primary') : (isPlayer2Me ? 'bg-secondary' : 'bg-muted')}`}></div>
-              <span className={`truncate font-medium ${match.winner_id === match.player2_id ? (isFinalRound ? 'text-yellow-500' : 'text-primary') : (isPlayer2Me ? 'text-secondary font-bold' : 'text-foreground')}`}>
-                {match.player2?.display_name || "TBD"} {isPlayer2Me && <span className="text-[10px] opacity-70 ml-1 font-normal">(You)</span>}
+              <div className={`w-1.5 h-6 rounded-full ${match.winner_id === match.player2_id ? (isFinalRound ? 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]' : 'bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]') : (isPlayer2Me ? 'bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'bg-muted')}`}></div>
+              <span className={`truncate font-medium ${match.winner_id === match.player2_id ? (isFinalRound ? 'text-yellow-500' : 'text-cyan-400') : (isPlayer2Me ? 'text-cyan-400 font-bold drop-shadow-sm' : 'text-foreground')}`}>
+                {match.player2?.display_name || "TBD"} {isPlayer2Me && <span className="text-[10px] opacity-70 ml-1 font-normal text-cyan-300">(You)</span>}
               </span>
             </div>
-            {match.winner_id === match.player2_id && <Trophy className={`w-3 h-3 flex-shrink-0 ml-2 ${isFinalRound ? 'text-yellow-500 drop-shadow-[0_0_2px_rgba(234,179,8,0.8)]' : 'text-primary'}`} />}
+            {match.winner_id === match.player2_id && <Trophy className={`w-3 h-3 flex-shrink-0 ml-2 ${isFinalRound ? 'text-yellow-500 drop-shadow-[0_0_2px_rgba(234,179,8,0.8)]' : 'text-cyan-400 drop-shadow-[0_0_2px_rgba(34,211,238,0.8)]'}`} />}
           </div>
         </div>
 
         <div className={`px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex justify-between items-center ${isFinalRound ? 'bg-yellow-500/5' : 'bg-muted/30'}`}>
-          <div className="flex flex-col gap-0.5">
-            <span>
+          <div className="flex flex-col gap-0.5 truncate pr-2">
+            <span className="truncate">
               {match.scheduled_time
                 ? new Intl.DateTimeFormat('default', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(match.scheduled_time))
                 : "TBD"}
             </span>
             {match.deadline && (
-              <span className="text-[9px] text-muted-foreground/80 lowercase tracking-normal font-medium mt-0.5">dl: {new Intl.DateTimeFormat('default', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(match.deadline))}</span>
+              <span className="text-[9px] text-muted-foreground/80 lowercase tracking-normal font-medium mt-0.5 truncate">dl: {new Intl.DateTimeFormat('default', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(match.deadline))}</span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {/* Status label — show "Lost" if current user is eliminated */}
+          <div className="flex items-center gap-2 shrink-0">
             {(() => {
+              const isMyMatchAndCanSubmit = (user?.id === match.player1_id || user?.id === match.player2_id) &&
+                (match.status === 'scheduled' || match.status === 'live' || match.status === 'waiting_submission') &&
+                (!match.match_submissions?.some((s: any) => s.player_id === user?.id));
+
+              if (isMyMatchAndCanSubmit) {
+                return (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className={`h-6 text-[10px] px-2 border ${isFinalRound ? 'bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-500 border-yellow-500/50' : 'bg-primary/20 hover:bg-primary/40 text-primary border-primary/50'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/matches/${match.id}/submit`);
+                    }}
+                  >
+                    <Upload className="w-3 h-3 mr-1" />
+                    Submit
+                  </Button>
+                );
+              }
+
               const isEliminated = match.status === 'verified' && match.winner_id && match.winner_id !== user?.id && (user?.id === match.player1_id || user?.id === match.player2_id);
               if (isEliminated) return <span className="text-red-400 flex items-center gap-1"><XCircle className="w-3 h-3" /> Lost</span>;
               if (match.status === 'verified') return <span className="text-green-400 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Done</span>;
@@ -344,24 +364,6 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
               return <span>{match.status}</span>;
             })()}
             {isClickable && <Settings className={`w-3 h-3 opacity-50 transition-colors ${isFinalRound ? 'hover:text-yellow-500' : 'hover:text-primary'}`} />}
-
-            {/* Submit Match Result Button (Only for players who haven't submitted yet) */}
-            {(user?.id === match.player1_id || user?.id === match.player2_id) &&
-              (match.status === 'scheduled' || match.status === 'live' || match.status === 'waiting_submission') &&
-              (!match.match_submissions?.some((s: any) => s.player_id === user?.id)) && (
-                <Button
-                  size="sm"
-                  variant="default"
-                  className={`h-6 text-[10px] px-2 border ${isFinalRound ? 'bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-500 border-yellow-500/50' : 'bg-primary/20 hover:bg-primary/40 text-primary border-primary/50'}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/matches/${match.id}/submit`);
-                  }}
-                >
-                  <Upload className="w-3 h-3 mr-1" />
-                  Submit
-                </Button>
-              )}
           </div>
         </div>
       </div>
@@ -378,7 +380,7 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
           const slotHeight = baseSlotHeight * Math.pow(2, roundIndex);
 
           return (
-            <div key={round.id} className="relative flex flex-col w-[260px] mr-12">
+            <div key={round.id} className="relative flex flex-col w-[260px] mr-20">
               <h3 className={`text-sm uppercase tracking-wider font-bold text-center mb-6 h-6 flex items-center justify-center gap-2 ${isFinalRound ? 'text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.6)] text-lg' : 'text-muted-foreground'}`}>
                 {isFinalRound && <Trophy className="w-4 h-4 text-yellow-500" />}
                 {round.name}
@@ -391,15 +393,15 @@ export const TournamentBracket = ({ tournamentId }: { tournamentId: string }) =>
                     <div key={match.id} className="relative flex items-center justify-center" style={{ height: `${slotHeight}px` }}>
                       {/* Line coming from previous round */}
                       {roundIndex > 0 && (
-                        <div className={`absolute left-[-24px] w-[24px] h-[2px] top-1/2 -translate-y-1/2 ${isFinalRound ? 'bg-yellow-500/60 shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'bg-primary/40'}`}></div>
+                        <div className={`absolute left-[-40px] w-[40px] h-[2px] top-1/2 -translate-y-1/2 ${isFinalRound ? 'bg-yellow-500/60 shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'bg-cyan-500/40 shadow-[0_0_5px_rgba(6,182,212,0.3)]'}`}></div>
                       )}
 
                       {/* Lines branching to next round (only if not the final round) */}
                       {!isFinalRound && (
                         <>
-                          <div className={`absolute right-[-24px] w-[24px] h-[2px] top-1/2 -translate-y-1/2 z-0 ${isSemifinal ? 'bg-yellow-500/60 shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'bg-primary/40'}`}></div>
+                          <div className={`absolute right-[-40px] w-[40px] h-[2px] top-1/2 -translate-y-1/2 z-0 ${isSemifinal ? 'bg-yellow-500/60 shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'bg-cyan-500/40 shadow-[0_0_5px_rgba(6,182,212,0.3)]'}`}></div>
                           <div
-                            className={`absolute right-[-24px] w-[2px] z-0 ${isSemifinal ? 'bg-yellow-500/60 shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'bg-primary/40'} ${isTopMatchInPair
+                            className={`absolute right-[-40px] w-[2px] z-0 ${isSemifinal ? 'bg-yellow-500/60 shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'bg-cyan-500/40 shadow-[0_0_5px_rgba(6,182,212,0.3)]'} ${isTopMatchInPair
                               ? 'top-1/2 h-[50%]'
                               : 'bottom-1/2 h-[50%]'
                               }`}

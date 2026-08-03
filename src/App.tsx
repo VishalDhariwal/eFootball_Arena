@@ -25,6 +25,7 @@ const TournamentPaymentPage = lazy(() => import("./features/tournaments/pages/To
 const MyTournamentsPage = lazy(() => import("./features/tournaments/pages/MyTournamentsPage"));
 const TournamentStatsPage = lazy(() => import("./features/tournaments/pages/TournamentStatsPage"));
 const PlayerStatsPage = lazy(() => import("./features/stats/pages/PlayerStatsPage"));
+const GlobalRatingsPage = lazy(() => import("./features/stats/pages/GlobalRatingsPage"));
 const MatchSubmissionPage = lazy(() => import("./features/matches/pages/MatchSubmissionPage"));
 const LeaderboardPage = lazy(() => import("./features/dashboard/pages/LeaderboardPage"));
 
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
               <Route path="/profile/:id" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
               <Route path="/stats" element={<ProtectedRoute><AppLayout><PlayerStatsPage /></AppLayout></ProtectedRoute>} />
+              <Route path="/global-ratings" element={<ProtectedRoute><AppLayout><GlobalRatingsPage /></AppLayout></ProtectedRoute>} />
               <Route path="/tournaments" element={<ProtectedRoute><AppLayout><TournamentsPage /></AppLayout></ProtectedRoute>} />
               <Route path="/tournaments/:id" element={<ProtectedRoute><AppLayout><TournamentDetailPage /></AppLayout></ProtectedRoute>} />
               <Route path="/tournaments/:id/pay" element={<ProtectedRoute><AppLayout><TournamentPaymentPage /></AppLayout></ProtectedRoute>} />

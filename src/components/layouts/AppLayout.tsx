@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Trophy, User, BarChart3, Calendar, Shield, LayoutDashboard, Menu, Bell, IndianRupee, Crown, HelpCircle } from "lucide-react";
+import { LogOut, Home, Trophy, User, BarChart3, Calendar, Shield, LayoutDashboard, Menu, Bell, IndianRupee, Crown, HelpCircle, Globe } from "lucide-react";
 import { supabase } from "@/services/supabase";
 import { toast } from "sonner";
 import { NotificationsPopover } from "@/features/notifications/components/NotificationsPopover";
@@ -44,6 +44,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
     { to: '/tournaments', icon: Trophy, label: 'Tournaments' },
     { to: '/my-tournaments', icon: Calendar, label: 'My Tournaments' },
     { to: '/stats', icon: BarChart3, label: 'Stats' },
+    { to: '/global-ratings', icon: Globe, label: 'Global Ratings' },
     { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
   ];
 

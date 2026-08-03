@@ -8,7 +8,6 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usePlayerDetailedStats } from "@/features/stats/hooks/usePlayerDetailedStats";
 import { usePlayerStats } from "@/features/matches/hooks/useMatches";
 import { useProfile } from "@/features/auth/hooks/useProfile";
-import { PlayerPerformance } from "@/features/stats/components/PlayerPerformance";
 
 const StatCard = ({ label, value, sub, icon: Icon, color = "primary", delay = 0 }: {
   label: string;
@@ -146,17 +145,6 @@ const PlayerStatsPage = () => {
                 </div>
               </Card>
             </motion.div>
-
-            {/* Detailed Stats Bars */}
-            <div className="mb-4">
-              <PlayerPerformance userId={user?.id} />
-            </div>
-
-            {/* <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-              <p className="text-xs text-muted-foreground text-center">
-                Based on {detailed.matchesWithDetailedStats} match{detailed.matchesWithDetailedStats !== 1 ? 'es' : ''} with uploaded screenshots
-              </p>
-            </motion.div> */}
           </>
         )}
       </div>

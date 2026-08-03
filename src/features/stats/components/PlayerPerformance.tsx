@@ -32,7 +32,6 @@ export const PlayerPerformance = ({ userId }: { userId: string | undefined }) =>
   if (ratings.rating_confidence === 'Low') {
     return (
       <Card className="p-12 bg-gradient-card border-border relative overflow-hidden flex flex-col items-center justify-center text-center">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-primary to-blue-400"></div>
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
           <Shield className="w-8 h-8 text-primary" />
         </div>
@@ -83,7 +82,6 @@ export const PlayerPerformance = ({ userId }: { userId: string | undefined }) =>
     <div className="space-y-6">
       {/* Player Performance Header & Radar */}
       <Card className="p-6 bg-gradient-card border-border relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-primary to-blue-400"></div>
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
 
